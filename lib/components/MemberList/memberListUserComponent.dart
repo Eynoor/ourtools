@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class Memberlistusercomponent extends StatefulWidget {
   @override
-  _MemberlistusercomponentState createState() => _MemberlistusercomponentState();
+  _MemberlistusercomponentState createState() =>
+      _MemberlistusercomponentState();
 }
 
 class _MemberlistusercomponentState extends State<Memberlistusercomponent> {
@@ -31,7 +32,7 @@ class _MemberlistusercomponentState extends State<Memberlistusercomponent> {
             SizedBox(width: 8),
             Text(
               'Baseball Prinda-',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
             ),
           ],
         ),
@@ -73,7 +74,7 @@ class _MemberlistusercomponentState extends State<Memberlistusercomponent> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             IconButton(
-              icon: Icon(Icons.list, color: Colors.white),
+              icon: Icon(Icons.list, color: const Color.fromARGB(255, 0, 0, 0)),
               onPressed: () {
                 // Navigasi atau logika untuk tombol kiri
               },

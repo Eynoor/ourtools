@@ -29,7 +29,7 @@ class _HomecomponentState extends State<Homecomponent> {
                 onTap: () {
                   // Navigator.pop(context); // Tutup modal
                   // Tambahkan logika untuk Join Room di sini
-                  
+
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
@@ -43,7 +43,6 @@ class _HomecomponentState extends State<Homecomponent> {
                 leading: Icon(Icons.create),
                 title: Text('Create Room'),
                 onTap: () {
-                
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
@@ -71,12 +70,12 @@ class _HomecomponentState extends State<Homecomponent> {
             // Header Drawer
             DrawerHeader(
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: Color(0xFFFF7643),
               ),
               child: Text(
                 'Sidebar Header',
                 style: TextStyle(
-                  color: Colors.black,
+                  color: const Color.fromARGB(255, 0, 0, 0),
                   fontSize: 24,
                 ),
               ),
@@ -109,7 +108,9 @@ class _HomecomponentState extends State<Homecomponent> {
               height: 60,
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: Colors.black, width: 1),
+                  bottom: BorderSide(
+                      color: const Color.fromARGB(255, 255, 255, 255),
+                      width: 1),
                 ),
               ),
               child: Row(
@@ -121,7 +122,7 @@ class _HomecomponentState extends State<Homecomponent> {
                     child: IconButton(
                       icon: const Icon(Icons.menu),
                       iconSize: 30,
-                      color: Colors.black,
+                      color: const Color.fromARGB(255, 255, 255, 255),
                       onPressed: () {
                         // Buka drawer saat tombol menu ditekan
                         _scaffoldKey.currentState?.openDrawer();
@@ -134,7 +135,7 @@ class _HomecomponentState extends State<Homecomponent> {
                     child: IconButton(
                       icon: const Icon(Icons.add),
                       iconSize: 30,
-                      color: Colors.black,
+                      color: const Color.fromARGB(255, 255, 255, 255),
                       onPressed: () {
                         // Tampilkan modal bottom sheet saat tombol plus ditekan
                         _showOptionsModal(context);
@@ -180,7 +181,7 @@ class _HomecomponentState extends State<Homecomponent> {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Colors.blue,
+        color: Color(0xFFFF7643),
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
         child: Row(
@@ -189,7 +190,7 @@ class _HomecomponentState extends State<Homecomponent> {
             IconButton(
               onPressed: () {},
               icon: const Icon(Icons.home),
-              color: Colors.black,
+              color: const Color.fromARGB(255, 255, 255, 255),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 20.0),
@@ -206,6 +207,7 @@ class _HomecomponentState extends State<Homecomponent> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.white,
+        // child: Icon(Icons.add, color: Colors.black),
         onPressed: () {},
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -218,7 +220,7 @@ Widget _buildCard(
   return Container(
     padding: EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.blue,
+      color: Color(0xFFFF7643),
       borderRadius: BorderRadius.circular(8),
     ),
     child: Column(
@@ -293,14 +295,14 @@ class CreateRoomDialog extends StatelessWidget {
             // Tombol untuk Membuat Room
             ElevatedButton(
               onPressed: () {
-                  Navigator.pushNamed(context, Borrowscreens.routeName);
+                Navigator.pushNamed(context, Borrowscreens.routeName);
                 // Logika untuk membuat room
                 print('Room Name: ${roomNameController.text}');
                 print('Location: ${locationController.text}');
                 // Navigator.pop(context); // Menutup dialog
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: Color(0xFFFF7643),
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               ),
               child: Text(
@@ -354,7 +356,7 @@ class EnterRoomDialog extends StatelessWidget {
                 //Navigator.pop(context); // Menutup dialog
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: Color(0xFFFF7643),
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
               ),
               child: Text(

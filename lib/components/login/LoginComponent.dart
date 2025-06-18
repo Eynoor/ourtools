@@ -26,7 +26,7 @@ class _LoginComponentState extends State<LoginComponent> {
                 SizedBox(height: SizeConfig.screenHeight * 0.04),
                 SimpleShadow(
                   opacity: 0.5,
-                  color: kSecondaryColor,
+                  color: Color(0xFFFF7643),
                   offset: Offset(5, 5),
                   sigma: 2,
                   child: Image.asset(
@@ -36,22 +36,21 @@ class _LoginComponentState extends State<LoginComponent> {
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.only(left: 10),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Login",
-                      style: mTitleStyle,
-                      )
-                    ],
-                  )
-                ),
+                    padding: EdgeInsets.only(left: 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Login",
+                          style: mTitleStyle,
+                        )
+                      ],
+                    )),
                 SizedBox(height: 20),
-                
+
                 //memanggil kelas Login form
                 Signform()
               ],
-              
             ),
           ),
         ),

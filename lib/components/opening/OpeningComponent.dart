@@ -27,7 +27,7 @@ class _OpeningComponentState extends State<Openingcomponent> {
                 SizedBox(height: SizeConfig.screenHeight * 0.04),
                 SimpleShadow(
                   opacity: 0.5,
-                  color: kSecondaryColor,
+                  color: Color(0xFFFF7643),
                   offset: Offset(5, 5),
                   sigma: 2,
                   child: Image.asset(

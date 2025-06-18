@@ -1,11 +1,9 @@
-import 'package:coba1/components/login/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:coba1/components/custom_surfix_icon.dart';
 import 'package:coba1/components/default_custom_button_color.dart';
 import 'package:coba1/screens/Home/HomeScreens.dart';
 import 'package:coba1/size_config.dart';
 import 'package:coba1/utils/constants.dart';
-//import 'package:coba1/services/api_service.dart'; // Import ApiService
 
 class Signform extends StatefulWidget {
   @override
@@ -18,9 +16,7 @@ class _Signform extends State<Signform> {
   String password = '';
   bool isLoading = false;
 
-  final ApiService _apiService = ApiService();
-
-  FocusNode focusNode = new FocusNode();
+  FocusNode focusNode = FocusNode();
 
   @override
   Widget build(BuildContext context) {
@@ -53,24 +49,18 @@ class _Signform extends State<Signform> {
                         isLoading = true;
                       });
 
-                      try {
-                        final response =
-                            await _apiService.login(email, password);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(
-                                  'Login berhasil! Token: ${response['token']}')),
-                        );
-                        Navigator.pushNamed(context, Homescreens.routeName);
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(e.toString())),
-                        );
-                      } finally {
-                        setState(() {
-                          isLoading = false;
-                        });
-                      }
+                      // Simulasi login tanpa API
+                      await Future.delayed(Duration(seconds: 2));
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Login simulasi berhasil!')),
+                      );
+
+                      Navigator.pushNamed(context, Homescreens.routeName);
+
+                      setState(() {
+                        isLoading = false;
+                      });
                     }
                   },
                 ),

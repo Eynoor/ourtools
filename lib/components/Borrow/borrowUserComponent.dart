@@ -18,11 +18,12 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue,
+        backgroundColor: Color(0xFFFF7643),
         title: Row(
           children: [
             IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(Icons.arrow_back,
+                  color: const Color.fromARGB(255, 0, 0, 0)),
               onPressed: () {
                 Navigator.pop(context);
               },
@@ -30,7 +31,7 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
             SizedBox(width: 8),
             Text(
               'Gg Merah Putih',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
             ),
           ],
         ),
@@ -54,14 +55,13 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
       //   child: Icon(Icons.add, color: Colors.white),
       // ),
       bottomNavigationBar: BottomAppBar(
-        color: Colors.blue,
+        color: Color(0xFFFF7643),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             IconButton(
               icon: Icon(Icons.list, color: Colors.black),
               onPressed: () {
-                
                 // Logika untuk navigasi ke halaman lain
               },
             ),
@@ -91,10 +91,11 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: Colors.blue,
+            color: Color(0xFFFF7643),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(Icons.sports_soccer, color: Colors.white, size: 30),
+          child: Icon(Icons.sports_soccer,
+              color: const Color.fromARGB(255, 0, 0, 0), size: 30),
         ),
         title: Text(
           title,
@@ -116,7 +117,6 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
           print("Tapped on $title");
         },
       ),
-
     );
   }
 }
