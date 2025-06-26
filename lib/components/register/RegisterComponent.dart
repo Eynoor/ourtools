@@ -25,7 +25,7 @@ class _RegisterComponentState extends State<Registercomponent> {
                   SizedBox(height: SizeConfig.screenHeight * 0.04),
 
                   SizedBox(height: 20),
-                 Registerform()
+                 RegisterForm()
                 ],
               ),
             )),

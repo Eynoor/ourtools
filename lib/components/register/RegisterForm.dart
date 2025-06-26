@@ -1,51 +1,70 @@
 import 'package:coba1/components/custom_surfix_icon.dart';
 import 'package:coba1/components/default_custom_button_color.dart';
 import 'package:coba1/components/identitas/identitasComponent.dart';
-//import 'package:coba1/screens/dataDiri/data.dart';
-
 import 'package:coba1/size_config.dart';
 import 'package:coba1/utils/constants.dart';
 import 'package:flutter/material.dart';
-import 'api_service.dart';
 
-class Registerform extends StatefulWidget {
+class RegisterForm extends StatefulWidget {
   @override
-  _Registerform createState() => _Registerform();
+  _RegisterFormState createState() => _RegisterFormState();
 }
 
-class _Registerform extends State<Registerform> {
+class _RegisterFormState extends State<RegisterForm> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers untuk mengambil nilai input
   final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _emailController    = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController(); // Controller untuk konfirmasi password
+  final TextEditingController _confirmController  = TextEditingController();
 
-  // Fungsi untuk menampilkan dialog/snackbar
-  void showSnackbar(BuildContext context, String message, bool success) {
-    final snackBar = SnackBar(
-      content: Text(
-        message,
-        style: TextStyle(color: Colors.white),
+  void showSnackbar(String message, bool success) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: success ? Colors.green : Colors.red,
+        duration: const Duration(seconds: 3),
       ),
-      backgroundColor: success ? Colors.green : Colors.red,
-      duration: Duration(seconds: 3),
     );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  // helper untuk style InputDecoration dengan hintText
+  InputDecoration _buildInputDecoration({
+    required String hint,
+    required String svgIcon,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.grey),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16, vertical: 20,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      suffixIcon: CustomSurffixIcon(svgIcon: svgIcon),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Form(
-      key: _formKey, // Tambahkan key untuk validasi
+      key: _formKey,
       child: Column(
         children: [
-          Text(
+          const Text(
             'Sign up',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.black,
+              color: Colors.white,
               fontSize: 40,
               fontFamily: 'Kameron',
               fontWeight: FontWeight.w700,
@@ -56,43 +75,22 @@ class _Registerform extends State<Registerform> {
           SizedBox(height: getProportionateScreenHeight(20)),
           buildEmail(),
           SizedBox(height: getProportionateScreenHeight(20)),
-          buildPass(),
+          buildPassword(),
           SizedBox(height: getProportionateScreenHeight(20)),
-          buildConfirmPass(), // Menambahkan form untuk konfirmasi password
+          buildConfirmPassword(),
+          SizedBox(height: getProportionateScreenHeight(30)),
           DefaultButtonCustomeColor(
             color: kPrimaryColor,
             text: "Register",
-            press: () async {
-              // Memastikan validasi berhasil sebelum melanjutkan
+            press: () {
               if (_formKey.currentState!.validate()) {
-                // Panggil fungsi registerUser dengan data dari input
-                final username = _usernameController.text.trim();
-                final email = _emailController.text.trim();
-                final password = _passwordController.text.trim();
-
-                // Tampilkan loading sementara
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (BuildContext context) {
-                    return Center(child: CircularProgressIndicator());
-                  },
+                showSnackbar('Registrasi berhasil!', true);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Identitascomponent(),
+                  ),
                 );
-
-                // Panggil API
-                try {
-                  await registerUser(username, email, password);
-                  Navigator.of(context).pop(); // Tutup dialog loading
-                  showSnackbar(context, 'User berhasil didaftarkan!', true);
-
-                  // Navigasi ke halaman home setelah berhasil daftar
-                 //Navigator.pushReplacementNamed(context, MaterialPageRoute(builder: (context) => indentitasComponent()));
-                 Navigator.push(context,
-                 MaterialPageRoute(builder: (context) => Identitascomponent()));
-                } catch (e) {
-                  Navigator.of(context).pop(); // Tutup dialog loading
-                  showSnackbar(context, 'Gagal mendaftar: $e', false);
-                }
               }
             },
           ),
@@ -103,14 +101,10 @@ class _Registerform extends State<Registerform> {
 
   TextFormField buildUserName() {
     return TextFormField(
-      controller: _usernameController, // Controller untuk username
-      keyboardType: TextInputType.text,
-      style: mTitleStyle,
-      decoration: InputDecoration(
-        labelText: 'Username',
-        hintText: 'Masukan Username',
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: CustomSurffixIcon(svgIcon: "assets/icons/User.svg"),
+      controller: _usernameController,
+      decoration: _buildInputDecoration(
+        hint: 'Username',
+        svgIcon: "assets/icons/User.svg",
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -123,14 +117,11 @@ class _Registerform extends State<Registerform> {
 
   TextFormField buildEmail() {
     return TextFormField(
-      controller: _emailController, // Controller untuk email
+      controller: _emailController,
       keyboardType: TextInputType.emailAddress,
-      style: mTitleStyle,
-      decoration: InputDecoration(
-        labelText: 'Email',
-        hintText: 'Masukan Email',
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: CustomSurffixIcon(svgIcon: "assets/icons/Mail.svg"),
+      decoration: _buildInputDecoration(
+        hint: 'Email',
+        svgIcon: "assets/icons/Mail.svg",
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -143,17 +134,13 @@ class _Registerform extends State<Registerform> {
     );
   }
 
-  TextFormField buildPass() {
+  TextFormField buildPassword() {
     return TextFormField(
-      controller: _passwordController, // Controller untuk password
+      controller: _passwordController,
       obscureText: true,
-      keyboardType: TextInputType.text,
-      style: mTitleStyle,
-      decoration: InputDecoration(
-        labelText: 'Password',
-        hintText: 'Masukan Password',
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: CustomSurffixIcon(svgIcon: "assets/icons/Lock.svg"),
+      decoration: _buildInputDecoration(
+        hint: 'Password',
+        svgIcon: "assets/icons/Lock.svg",
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -166,23 +153,19 @@ class _Registerform extends State<Registerform> {
     );
   }
 
-  TextFormField buildConfirmPass() {
+  TextFormField buildConfirmPassword() {
     return TextFormField(
-      controller: _confirmPasswordController, // Controller untuk konfirmasi password
+      controller: _confirmController,
       obscureText: true,
-      keyboardType: TextInputType.text,
-      style: mTitleStyle,
-      decoration: InputDecoration(
-        labelText: 'Konfirmasi Password',
-        hintText: 'Masukkan Konfirmasi Password',
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: CustomSurffixIcon(svgIcon: "assets/icons/Lock.svg"),
+      decoration: _buildInputDecoration(
+        hint: 'Konfirmasi Password',
+        svgIcon: "assets/icons/Lock.svg",
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Konfirmasi password tidak boleh kosong';
         } else if (value != _passwordController.text) {
-          return 'Password dan konfirmasi password tidak cocok';
+          return 'Password dan konfirmasi tidak cocok';
         }
         return null;
       },

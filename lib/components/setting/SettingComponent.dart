@@ -32,7 +32,7 @@ class _SettingcomponentState extends State<Settingcomponent> {
                   SizedBox(height: SizeConfig.screenHeight * 0.04),
                   SimpleShadow(
                     opacity: 0.5,
-                    color: kSecondaryColor,
+                    color: kPrimaryColor,
                     offset: Offset(5, 5),
                     sigma: 2,
                     // child: Image.asset(
@@ -44,14 +44,15 @@ class _SettingcomponentState extends State<Settingcomponent> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => ProfilePage()),
+                          MaterialPageRoute(
+                              builder: (context) => ProfilePage()),
                         );
                       },
-                    child: Image.asset(
-                      "assets/images/logo.jpeg",
-                      height: 150,
-                      width: 202,
-                    ),
+                      child: Image.asset(
+                        "assets/images/logo.jpeg",
+                        height: 150,
+                        width: 202,
+                      ),
                     ),
                   ),
                   SizedBox(height: 40),
@@ -93,7 +94,7 @@ class _SettingcomponentState extends State<Settingcomponent> {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Colors.blue,
+        color: kPrimaryColor,
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
         child: Row(
@@ -104,7 +105,7 @@ class _SettingcomponentState extends State<Settingcomponent> {
                 Navigator.pushNamed(context, Homescreens.routeName);
               },
               icon: const Icon(Icons.home),
-              color: Colors.white,
+              color: const Color.fromARGB(255, 0, 0, 0),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 20.0),
@@ -118,7 +119,7 @@ class _SettingcomponentState extends State<Settingcomponent> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.white,
+        backgroundColor: kPrimaryColor,
         onPressed: () {},
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -133,7 +134,7 @@ class _SettingcomponentState extends State<Settingcomponent> {
         width: double.infinity,
         height: 60,
         decoration: BoxDecoration(
-          color: Colors.blue,
+          color: kPrimaryColor,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
