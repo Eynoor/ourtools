@@ -16,7 +16,7 @@ final Map <String, WidgetBuilder> routes = {
    Datascreens.routeName : (context) => Datascreens(),
   Homescreens.routeName : (context) => Homescreens(),
   Settingscreens.routeName : (context) => Settingscreens(),
-  Borrowscreens.routeName : (context) => Borrowscreens(),
+  // Borrowscreens.routeName : (context) => Borrowscreens(), // Dihapus karena perlu parameter
   BorrowUserscreens.routeName : (context) => BorrowUserscreens(),
 
 };

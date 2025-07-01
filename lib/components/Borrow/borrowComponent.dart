@@ -3,6 +3,11 @@ import 'package:coba1/components/MemberList/memberListAdmin.dart';
 import 'package:flutter/material.dart';
 
 class Borrowcomponent extends StatefulWidget {
+  final String roomTitle;
+  final String roomSubtitle;
+
+  Borrowcomponent({required this.roomTitle, required this.roomSubtitle});
+
   @override
   _BorrowcomponentState createState() => _BorrowcomponentState();
 }
@@ -30,7 +35,7 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
             ),
             SizedBox(width: 8),
             Text(
-              'Gg Merah Putih',
+              widget.roomTitle,
               style: TextStyle(color: Colors.white),
             ),
           ],

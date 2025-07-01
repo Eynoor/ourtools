@@ -3,6 +3,7 @@ import 'package:coba1/screens/Borrow/borrowScreens.dart';
 import 'package:coba1/screens/Borrow/borrowUserScreens.dart';
 import 'package:coba1/screens/setting/Settingscreens.dart';
 import 'package:flutter/material.dart';
+import 'package:coba1/utils/db_helper.dart';
 
 class Homecomponent extends StatefulWidget {
   @override
@@ -13,45 +14,94 @@ class _HomecomponentState extends State<Homecomponent> {
   // GlobalKey untuk mengakses ScaffoldState
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // Fungsi untuk menampilkan modal bottom sheet
+  // List untuk menyimpan data room
+  List<Map<String, String>> rooms = [];
+  final DBHelper _dbHelper = DBHelper();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRooms();
+  }
+
+  Future<void> _loadRooms() async {
+    final List<Map<String, dynamic>> roomsFromDB = await _dbHelper.getRooms();
+    if (roomsFromDB.isNotEmpty) {
+      setState(() {
+        rooms = roomsFromDB
+            .map((e) => {'title': e['title'] as String, 'subtitle': e['subtitle'] as String})
+            .toList();
+      });
+    } else {
+      setState(() {
+        rooms = [
+          {
+            'title': 'Baseball prindapan',
+            'subtitle': 'G3 R4',
+          },
+          {
+            'title': 'Gg Merah Putih',
+            'subtitle': 'Rumah pak Totok',
+          },
+          {
+            'title': 'Kos Ms. Brow',
+            'subtitle': 'Pojok kanan kamar mandi deket kamar ms. brow',
+          },
+        ];
+      });
+      // Save default rooms to DB
+      for (var room in rooms) {
+        await _dbHelper.insertRoom(room);
+      }
+    }
+  }
+
   void _showOptionsModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(Icons.group_add),
-                title: Text('Join Room'),
-                onTap: () {
-                  // Navigator.pop(context); // Tutup modal
-                  // Tambahkan logika untuk Join Room di sini
-
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return EnterRoomDialog();
-                    },
-                  );
-                  print('Join Room dipilih');
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.create),
-                title: Text('Create Room'),
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return CreateRoomDialog();
-                    },
-                  );
-                },
-              ),
-            ],
+        return SizedBox(
+          height: 180,
+          child: Container(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.group_add),
+                  title: Text('Join Room'),
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return EnterRoomDialog();
+                      },
+                    );
+                    print('Join Room dipilih');
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.create),
+                  title: Text('Create Room'),
+                  onTap: () {
+                    Navigator.pop(context); // Tutup modal bottom sheet sebelum showDialog
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return CreateRoomDialog(
+                          onCreate: (String title, String subtitle) async {
+                            print('Inserting room: $title, $subtitle');
+                            await _dbHelper.insertRoom({'title': title, 'subtitle': subtitle});
+                            await _loadRooms();
+                            Navigator.pop(context); // Tutup dialog setelah membuat room
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -150,31 +200,28 @@ class _HomecomponentState extends State<Homecomponent> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildCard(
-                    onTap: () {
-                      // Tampilkan modal bottom sheet saat card ditekan
-                      //Navigator.pushNamed(context, Borrowscreens.routeName);
-                      Navigator.push(
+                children: rooms.map((room) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: _buildCard(
+                      title: room['title'] ?? '',
+                      subtitle: room['subtitle'] ?? '',
+                      onTap: () {
+                        print('Room card tapped: ${room['title']}');
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => Borrowcomponent()));
-                      print('Kartu "Gg Merah Putih" ditekan');
-                    },
-                    title: "Baseball prindapan",
-                    subtitle: "G3 R4",
-                  ),
-                  SizedBox(height: 16),
-                  _buildCard(
-                    title: "Gg Merah Putih",
-                    subtitle: "Rumah pak Totok",
-                  ),
-                  SizedBox(height: 16),
-                  _buildCard(
-                    title: "Kos Ms. Brow",
-                    subtitle: "Pojok kanan kamar mandi deket kamar ms. brow",
-                  ),
-                ],
+                            builder: (context) => Borrowscreens(
+                              roomTitle: room['title'] ?? '',
+                              roomSubtitle: room['subtitle'] ?? '',
+                            ),
+                          ),
+                        );
+                        print('Kartu "${room['title']}" ditekan');
+                      },
+                    ),
+                  );
+                }).toList(),
               ),
             ),
           ],
@@ -205,12 +252,6 @@ class _HomecomponentState extends State<Homecomponent> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.white,
-        // child: Icon(Icons.add, color: Colors.black),
-        onPressed: () {},
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
@@ -255,6 +296,9 @@ Widget _buildCard(
 class CreateRoomDialog extends StatelessWidget {
   final TextEditingController roomNameController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
+  final Function(String, String) onCreate;
+
+  CreateRoomDialog({required this.onCreate});
 
   @override
   Widget build(BuildContext context) {
@@ -263,54 +307,54 @@ class CreateRoomDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min, // Mengatur ukuran sesuai konten
-          children: [
-            Text(
-              'Make your own room',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Mengatur ukuran sesuai konten
+            children: [
+              Text(
+                'Make your own room',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            SizedBox(height: 20),
-            // Input untuk Room Name
-            TextField(
-              controller: roomNameController,
-              decoration: InputDecoration(
-                labelText: 'Room name',
-                border: OutlineInputBorder(),
+              SizedBox(height: 20),
+              // Input untuk Room Name
+              TextField(
+                controller: roomNameController,
+                decoration: InputDecoration(
+                  labelText: 'Room name',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            SizedBox(height: 20),
-            // Input untuk Location
-            TextField(
-              controller: locationController,
-              decoration: InputDecoration(
-                labelText: 'Location',
-                border: OutlineInputBorder(),
+              SizedBox(height: 20),
+              // Input untuk Location
+              TextField(
+                controller: locationController,
+                decoration: InputDecoration(
+                  labelText: 'Location',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            SizedBox(height: 20),
-            // Tombol untuk Membuat Room
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, Borrowscreens.routeName);
-                // Logika untuk membuat room
-                print('Room Name: ${roomNameController.text}');
-                print('Location: ${locationController.text}');
-                // Navigator.pop(context); // Menutup dialog
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFFF7643),
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              SizedBox(height: 20),
+              // Tombol untuk Membuat Room
+              ElevatedButton(
+                onPressed: () {
+                  print('Make Room pressed with title: ${roomNameController.text}, location: ${locationController.text}');
+                  onCreate(roomNameController.text, locationController.text);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFFFF7643),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
+                child: Text(
+                  'Make Room',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
-              child: Text(
-                'Make Room',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
