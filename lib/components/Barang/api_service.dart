@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://your-laravel-api-url.com/api'; // Ganti dengan URL API Laravel Anda
+  static const String baseUrl = 'http://10.0.2.2:8000/api'; // Ganti dengan URL API Laravel Anda untuk emulator Android
 
   /// Mendapatkan daftar semua barang
   Future<List<dynamic>> getAllBarang() async {

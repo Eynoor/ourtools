@@ -1,0 +1,67 @@
+=======
+  Uint8List? _selectedImageBytes; // Untuk menyimpan gambar yang dipilih/dicapture dalam bentuk bytes
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+  // Fungsi untuk memilih gambar (opsional, bisa dihubungkan dengan Camera.dart)
+  void _selectImage(File? image) {
+    setState(() {
+      _selectedImage = image;
+    });
+  }
+=======
+  // Fungsi untuk memilih gambar (opsional, bisa dihubungkan dengan Camera.dart)
+  void _selectImage(Uint8List? imageBytes) {
+    setState(() {
+      _selectedImageBytes = imageBytes;
+    });
+  }
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+  // Fungsi untuk mengubah File ke Base64
+  String? _convertToBase64(File? file) {
+    if (file == null) return null;
+    final bytes = file.readAsBytesSync();
+    return base64Encode(bytes);
+  }
+=======
+  // Fungsi untuk mengubah Uint8List ke Base64
+  String? _convertToBase64(Uint8List? imageBytes) {
+    if (imageBytes == null) return null;
+    return base64Encode(imageBytes);
+  }
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            onTap: () async {
+                // Navigasi ke kamera atau file picker
+                final File? selectedImage = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Camera()),
+                );
+                _selectImage(selectedImage);
+              },
+=======
+            onTap: () async {
+                // Navigasi ke kamera atau file picker
+                final Uint8List? selectedImageBytes = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Camera()),
+                );
+                _selectImage(selectedImageBytes);
+              },
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                  child: _selectedImage != null
+                      ? Image.file(_selectedImage!, fit: BoxFit.cover)
+                      : Icon(
+                          Icons.camera_alt,
+                          size: 50,
+                          color: Colors.grey,
+                        ),
+=======
+                  child: _selectedImageBytes != null
+                      ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover)
+                      : Icon(
+                          Icons.camera_alt,
+                          size: 50,
+                          color: Colors.grey,
+                        ),

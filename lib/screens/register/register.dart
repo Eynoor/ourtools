@@ -11,6 +11,7 @@ class RegisterScreen extends StatelessWidget {
       SizeConfig().init(context);
 
       return Scaffold(
+        backgroundColor: Color(0xFF012435),
         appBar: AppBar(
           automaticallyImplyLeading: false,
         ),

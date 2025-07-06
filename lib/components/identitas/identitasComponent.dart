@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:coba1/components/Camera/Camera.dart';
-import 'package:coba1/components/identitas/api_service.dart';
-import 'package:coba1/screens/Home/HomeScreens.dart';
+
+import 'package:coba1/screens/login/LoginScreens.dart';
 import 'package:coba1/utils/constants.dart';
 import 'package:flutter/material.dart';
 
@@ -12,21 +12,19 @@ class Identitascomponent extends StatefulWidget {
 }
 
 class _IdentitascomponentState extends State<Identitascomponent> {
-  final _phoneCtrl = TextEditingController();
-  final _otpCtrl   = TextEditingController();
   String? _faceImg;
   bool _isSent = false;
 
   Future<void> _submitIdentitas() async {
-    final phone = _phoneCtrl.text;
-    final verified = _otpCtrl.text.isNotEmpty;
     if (_faceImg == null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Ambil gambar dulu!')));
       return;
     }
     try {
-      await identitas(phone, verified, _faceImg!);
+      // Replace with your backend API call to submit identity data
+      // For now, just simulate success
+      await Future.delayed(Duration(seconds: 1));
       setState(() => _isSent = true);
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Terkirim!')));
@@ -51,7 +49,7 @@ class _IdentitascomponentState extends State<Identitascomponent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(128, 8, 16, 109),
+      backgroundColor: Color(0xFF012435),
       appBar: AppBar(
         title: const Text('User Verification',
             style: TextStyle(color: Colors.white)),
@@ -74,105 +72,6 @@ class _IdentitascomponentState extends State<Identitascomponent> {
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // PHONE NUMBER
-              const Text('Phone Number',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _phoneCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  hintText: '+62 xxxxxxxxxx',
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // OTP + SEND
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: _otpCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: 'OTP',
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 14),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(
-                                  'OTP dikirim ke: ${_phoneCtrl.text}')),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        minimumSize: const Size.fromHeight(48),
-                      ),
-                      child: const Text('Send',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white)),
-                    ),
-                  ),
-                ],
-              ),
-
-              // VERIFIKASI BUTTON DI SINI
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_otpCtrl.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Masukkan OTP terlebih dahulu')));
-                      return;
-                    }
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content:
-                            Text('OTP "${_otpCtrl.text}" terverifikasi')));
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kPrimaryColor,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  child: const Text('Verifikasi',
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -215,19 +114,6 @@ class _IdentitascomponentState extends State<Identitascomponent> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    if (_phoneCtrl.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Nomor telepon belum diisi!')),
-                      );
-                      return;
-                    }
-                    if (_otpCtrl.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('OTP belum diisi!')),
-                      );
-                      return;
-                    }
                     if (_faceImg == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -237,7 +123,7 @@ class _IdentitascomponentState extends State<Identitascomponent> {
                       return;
                     }
                     await _submitIdentitas();
-                    Navigator.pushNamed(context, Homescreens.routeName);
+                    Navigator.pushNamed(context, Loginscreens.routeName);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kPrimaryColor,
@@ -261,11 +147,8 @@ class _IdentitascomponentState extends State<Identitascomponent> {
       ),
     );
   }
-
   @override
   void dispose() {
-    _phoneCtrl.dispose();
-    _otpCtrl.dispose();
     super.dispose();
   }
 }

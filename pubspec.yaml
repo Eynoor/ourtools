@@ -44,6 +44,7 @@ dependencies:
   shared_preferences: ^2.1.1
   sqflite: ^2.2.8+4
   path_provider: ^2.0.15
+  image: ^4.5.4
 
 #dependency_overrides:
 #  google_fonts: 2.3.3

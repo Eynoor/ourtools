@@ -37,7 +37,7 @@ class _MemberlistadminState extends State<Memberlistadmin> {
                   style: TextStyle(fontSize: 16),
                 ),
                 trailing: IconButton(
-                  icon: Icon(Icons.copy, color: Colors.blue),
+                  icon: Icon(Icons.copy, color: Color(0xFF012435)),
                   onPressed: () {
                     // Tambahkan logika untuk menyalin kode
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -56,7 +56,7 @@ class _MemberlistadminState extends State<Memberlistadmin> {
                   style: TextStyle(fontSize: 16),
                 ),
                 trailing: IconButton(
-                  icon: Icon(Icons.copy, color: Colors.blue),
+                  icon: Icon(Icons.copy, color: Color(0xFF012435)),
                   onPressed: () {
                     // Tambahkan logika untuk menyalin link
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -89,96 +89,52 @@ class _MemberlistadminState extends State<Memberlistadmin> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: Row(
-          children: [
-            IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Gg Merah Putih',
-              style: TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-        automaticallyImplyLeading: false,
-      ),
-      body: ListView(
-        children: [
-          // Admin Section
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              "Admin",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+    // Widget ini sekarang hanya berisi kontennya saja, tanpa Scaffold/AppBar
+    return ListView(
+      padding: const EdgeInsets.all(8.0),
+      children: [
+        // Admin Section
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Text(
+            "Admin",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white, // Ganti warna teks agar terlihat
             ),
           ),
-          Divider(),
-          ...admin.map((user) => _buildMemberTile(user)).toList(),
-          // Member Section
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              "Member",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+        ),
+        Divider(color: Colors.white24),
+        ...admin.map((user) => _buildMemberTile(user)).toList(),
+        // Member Section
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Text(
+            "Member",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white, // Ganti warna teks agar terlihat
             ),
           ),
-          Divider(),
-          ...members.map((user) => _buildMemberTile(user)).toList(),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showEditModal(context);
-        },
-        backgroundColor: Colors.blue,
-        child: Icon(Icons.edit, color: Colors.white),
-      ),
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.blue,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            IconButton(
-              icon: Icon(Icons.list, color: Colors.white),
-              onPressed: () {
-                // Navigasi atau logika untuk tombol kiri
-              },
-            ),
-            IconButton(
-              icon: Icon(Icons.group, color: Colors.white),
-              onPressed: () {
-                // Navigasi atau logika untuk tombol kanan
-              },
-            ),
-          ],
         ),
-      ),
+        Divider(color: Colors.white24),
+        ...members.map((user) => _buildMemberTile(user)).toList(),
+      ],
     );
   }
 
   Widget _buildMemberTile(Map<String, dynamic> user) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.white24,
         child: Icon(
           Icons.person,
           color: Colors.white,
         ),
       ),
-      title: Text(user["name"]),
+      title: Text(user["name"], style: TextStyle(color: Colors.white)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

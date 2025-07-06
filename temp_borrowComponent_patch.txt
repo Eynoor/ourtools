@@ -1,0 +1,138 @@
+final List<Map<String, String>> items = [
+    {"title": "Bola"},
+    {"title": "Mark"},
+    {"title": "Baju team"},
+    {"title": "Sepatu"},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+=======
+class _BorrowcomponentState extends State<Borrowcomponent> {
+  final List<Map<String, String>> items = [
+    {"title": "Bola"},
+    {"title": "Mark"},
+    {"title": "Baju team"},
+    {"title": "Sepatu"},
+  ];
+
+  // State to hold quantity for each item, initialized to 0
+  late List<int> quantities;
+
+  @override
+  void initState() {
+    super.initState();
+    quantities = List<int>.filled(items.length, 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        child: ListView.builder(
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            return _buildItemCard(items[index]['title']!);
+          },
+        ),
+=======
+        child: ListView.builder(
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            return _buildItemCard(items[index]['title']!, index);
+          },
+        ),
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+  Widget _buildItemCard(String title) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Color(0xFFEF9823),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(Icons.sports_soccer, color: Colors.white, size: 30),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Row(
+          children: [
+            Icon(Icons.add_box_outlined, size: 18),
+            SizedBox(width: 4),
+            Icon(Icons.check_box_outline_blank, size: 18),
+            SizedBox(width: 4),
+            Icon(Icons.indeterminate_check_box_outlined, size: 18),
+            SizedBox(width: 4),
+            Icon(Icons.date_range_outlined, size: 18)
+          ],
+        ),
+        trailing: Icon(Icons.delete, color: Colors.grey),
+        onTap: () {
+          print("Tapped on $title");
+        },
+      ),
+    );
+  }
+}
+=======
+  Widget _buildItemCard(String title, int index) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Color(0xFFEF9823),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(Icons.sports_soccer, color: Colors.white, size: 30),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.remove_circle_outline, color: Colors.red),
+              onPressed: () {
+                setState(() {
+                  if (quantities[index] > 0) {
+                    quantities[index]--;
+                  }
+                });
+              },
+            ),
+            Text(
+              quantities[index].toString(),
+              style: TextStyle(fontSize: 16),
+            ),
+            IconButton(
+              icon: Icon(Icons.add_circle_outline, color: Colors.green),
+              onPressed: () {
+                setState(() {
+                  quantities[index]++;
+                });
+              },
+            ),
+          ],
+        ),
+        trailing: Icon(Icons.delete, color: Colors.grey),
+        onTap: () {
+          print("Tapped on $title");
+        },
+      ),
+    );
+  }
+}

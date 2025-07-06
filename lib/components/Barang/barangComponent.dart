@@ -3,8 +3,9 @@ import 'package:coba1/components/Camera/Camera.dart';
 import 'package:coba1/screens/Borrow/borrowScreens.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert'; // Untuk mengelola base64 encoding
-import 'dart:io'; // Untuk File
-import 'api_service.dart';
+import 'package:image/image.dart' as img; // Import package image
+import 'dart:typed_data'; 
+import 'package:coba1/utils/db_helper.dart'; // Ganti ApiService dengan DBHelper
 
 class Barangcomponent extends StatefulWidget {
   @override
@@ -13,30 +14,49 @@ class Barangcomponent extends StatefulWidget {
 
 class _BarangcomponentState extends State<Barangcomponent> {
   final TextEditingController _itemNameController = TextEditingController();
-  final ApiService _apiService = ApiService();
-  File? _selectedImage; // Untuk menyimpan gambar yang dipilih/dicapture
+  final TextEditingController _itemStockController = TextEditingController();
+  final DBHelper _dbHelper = DBHelper(); // Gunakan DBHelper
+  Uint8List? _selectedImageBytes; // Untuk menyimpan gambar yang dipilih/dicapture dalam bentuk bytes
   bool _isLoading = false; // Untuk menunjukkan loading state
 
   // Fungsi untuk memilih gambar (opsional, bisa dihubungkan dengan Camera.dart)
-  void _selectImage(File? image) {
+  void _selectImage(Uint8List? imageBytes) {
     setState(() {
-      _selectedImage = image;
+      _selectedImageBytes = imageBytes;
     });
   }
 
-  // Fungsi untuk mengubah File ke Base64
-  String? _convertToBase64(File? file) {
-    if (file == null) return null;
-    final bytes = file.readAsBytesSync();
-    return base64Encode(bytes);
+  // Fungsi untuk mengubah ukuran gambar agar tidak terlalu besar
+  Future<Uint8List?> _resizeImage(Uint8List? imageBytes) async {
+    if (imageBytes == null) return null;
+
+    // Decode gambar dari bytes
+    img.Image? image = img.decodeImage(imageBytes);
+    if (image == null) return null;
+
+    // Ubah ukuran gambar ke lebar maksimum 800px (aspek rasio terjaga)
+    img.Image resizedImage = img.copyResize(image, width: 800);
+
+    // Encode kembali ke format JPG dengan kualitas 85%
+    // Ini akan mengurangi ukuran file secara signifikan
+    return Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
   }
 
   // Fungsi untuk mengirim data barang ke API
   Future<void> _addBarang() async {
     final namaBarang = _itemNameController.text.trim();
+    final stockText = _itemStockController.text.trim();
+
     if (namaBarang.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Nama barang tidak boleh kosong')),
+      );
+      return;
+    }
+    final int stock = int.tryParse(stockText) ?? 0;
+    if (stock <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Jumlah stok harus lebih dari 0')),
       );
       return;
     }
@@ -46,41 +66,41 @@ class _BarangcomponentState extends State<Barangcomponent> {
     });
 
     try {
-      // Mengonversi gambar ke Base64 jika ada
-      final imageBase64 = _convertToBase64(_selectedImage);
+      final resizedImageBytes = await _resizeImage(_selectedImageBytes);
 
-      // Memanggil API untuk menambahkan barang
-      await _apiService.createBarang(
-        namaBarang: namaBarang,
-        imageBase64: imageBase64,
-      );
+      // Simpan barang ke database lokal
+      await _dbHelper.insertBarang({
+        'nama_barang': namaBarang,
+        'image': resizedImageBytes,
+        'stock': stock,
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Barang berhasil ditambahkan')),
       );
 
-      // Reset form setelah sukses
-      _itemNameController.clear();
-      setState(() {
-        _selectedImage = null;
-      });
-
-      // Navigasi ke BorrowScreens
-      Navigator.pushNamed(context, Borrowscreens.routeName);
+      // Kembali ke halaman sebelumnya dan kirim sinyal 'true' bahwa ada data baru
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
     } catch (e) {
+      print('Error saat menambahkan barang: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal menambahkan barang: $e')),
       );
     } finally {
-      setState(() {
-        _isLoading = false; // Selesai loading
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // Selesai loading
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF012435),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -110,18 +130,32 @@ class _BarangcomponentState extends State<Barangcomponent> {
             ),
             SizedBox(height: 16),
             Text(
+              'Jumlah Stok',
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(height: 8),
+            TextField(
+              controller: _itemStockController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Masukkan jumlah stok awal',
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
               'Foto barang',
               style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 8),
             GestureDetector(
-              onTap: () async {
+            onTap: () async {
                 // Navigasi ke kamera atau file picker
-                final File? selectedImage = await Navigator.push(
+                final Uint8List? selectedImageBytes = await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => Camera()),
                 );
-                _selectImage(selectedImage);
+                _selectImage(selectedImageBytes);
               },
               child: Container(
                 height: 150,
@@ -130,8 +164,8 @@ class _BarangcomponentState extends State<Barangcomponent> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
-                  child: _selectedImage != null
-                      ? Image.file(_selectedImage!, fit: BoxFit.cover)
+                  child: _selectedImageBytes != null
+                      ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover)
                       : Icon(
                           Icons.camera_alt,
                           size: 50,
@@ -146,7 +180,7 @@ class _BarangcomponentState extends State<Barangcomponent> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _addBarang,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Color(0xFF012435),
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: _isLoading

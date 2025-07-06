@@ -4,6 +4,8 @@ import 'package:coba1/components/default_custom_button_color.dart';
 import 'package:coba1/screens/Home/HomeScreens.dart';
 import 'package:coba1/size_config.dart';
 import 'package:coba1/utils/constants.dart';
+import 'package:coba1/utils/db_helper.dart';
+import 'package:coba1/utils/session.dart';
 
 class Signform extends StatefulWidget {
   @override
@@ -17,6 +19,12 @@ class _Signform extends State<Signform> {
   bool isLoading = false;
 
   FocusNode focusNode = FocusNode();
+
+  Future<bool> _validateUser(String username, String password) async {
+    final dbHelper = DBHelper();
+    final users = await dbHelper.getUserByCredentials(username, password);
+    return users.isNotEmpty;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,14 +57,23 @@ class _Signform extends State<Signform> {
                         isLoading = true;
                       });
 
-                      // Simulasi login tanpa API
-                      await Future.delayed(Duration(seconds: 2));
+                      final isValid = await _validateUser(email, password);
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Login simulasi berhasil!')),
-                      );
+                      if (isValid) {
+                        // Set current user in session
+                        final session = Session();
+                        session.currentUsername = email;
 
-                      Navigator.pushNamed(context, Homescreens.routeName);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Login berhasil!')),
+                        );
+
+                        Navigator.pushNamed(context, Homescreens.routeName);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Username atau password salah')),
+                        );
+                      }
 
                       setState(() {
                         isLoading = false;
@@ -71,11 +88,11 @@ class _Signform extends State<Signform> {
 
   TextFormField buildUserName() {
     return TextFormField(
-      keyboardType: TextInputType.emailAddress,
+      keyboardType: TextInputType.text,
       style: mTitleStyle,
       decoration: InputDecoration(
-        labelText: 'Email',
-        hintText: 'Masukkan Email',
+        labelText: 'Username',
+        hintText: 'Masukkan Username',
         labelStyle: TextStyle(
           color: focusNode.hasFocus ? mTitleColor : kPrimaryColor,
         ),
@@ -85,7 +102,7 @@ class _Signform extends State<Signform> {
       onSaved: (newValue) => email = newValue!,
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Email tidak boleh kosong';
+          return 'Username tidak boleh kosong';
         }
         return null;
       },

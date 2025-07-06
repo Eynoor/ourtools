@@ -1,5 +1,8 @@
 import 'package:coba1/components/MemberList/memberListUserComponent.dart';
+import 'package:coba1/components/Barang/barangComponent.dart';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:coba1/utils/db_helper.dart';
 
 class BorrowUsercomponent extends StatefulWidget {
   @override
@@ -7,72 +10,113 @@ class BorrowUsercomponent extends StatefulWidget {
 }
 
 class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
-  final List<Map<String, String>> items = [
-    {"title": "Bola"},
-    {"title": "Mark"},
-    {"title": "Baju team"},
-    {"title": "Sepatu"},
-  ];
+  final DBHelper _dbHelper = DBHelper();
+  List<Map<String, dynamic>> items = [];
+  bool _isLoading = true;
+  int _selectedIndex = 0; // 0 untuk daftar barang, 1 untuk daftar member
+  // State to hold quantity for each item, initialized to 0
+  late List<int> quantities;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBarang();
+  }
+
+  // Fungsi untuk mengubah state saat item di BottomAppBar ditekan
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  // Widget untuk menampilkan daftar barang (dipisahkan agar rapi)
+  Widget _buildItemListView() {
+    return _isLoading
+        ? Center(child: CircularProgressIndicator())
+        : items.isEmpty
+            ? Center(
+                child: Text('Belum ada barang.',
+                    style: TextStyle(color: Colors.white)))
+            : ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  return _buildItemCard(items[index], index);
+                });
+  }
+
+  Future<void> _loadBarang() async {
+    setState(() {
+      _isLoading = true;
+    });
+    final data = await _dbHelper.getAllBarang();
+    setState(() {
+      items = data;
+      quantities = List<int>.filled(items.length, 0);
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF012435),
       appBar: AppBar(
-        backgroundColor: Color(0xFFFF7643),
-        title: Row(
-          children: [
-            IconButton(
-              icon: Icon(Icons.arrow_back,
-                  color: const Color.fromARGB(255, 0, 0, 0)),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Gg Merah Putih',
-              style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
-            ),
-          ],
+        backgroundColor: Color(0xFFEF9823),
+        title: Text(
+          _selectedIndex == 0 ? 'Gg Merah Putih' : 'Daftar Member',
+          style: TextStyle(color: Colors.white),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
         automaticallyImplyLeading: false,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ListView.builder(
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            return _buildItemCard(items[index]['title']!);
-          },
-        ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: <Widget>[
+          // Halaman 0: Daftar Barang
+          _buildItemListView(),
+          // Halaman 1: Daftar Member
+          Memberlistusercomponent(),
+        ],
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   backgroundColor: Colors.blue,
-      //   onPressed: () {
-      //     // Tambahkan logika untuk aksi tombol plus
-      //     print("Tambah item baru");
-      //   },
-      //   child: Icon(Icons.add, color: Colors.white),
-      // ),
+      floatingActionButton: _selectedIndex == 0
+          ? FloatingActionButton(
+              backgroundColor: Color(0xFFEF9823),
+              onPressed: () async {
+                // Import Barangcomponent dengan path yang benar
+                final newItem = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Barangcomponent()),
+                );
+                if (newItem == true) {
+                  _loadBarang(); // Muat ulang data jika ada barang baru
+                }
+              },
+              child: Icon(Icons.add, color: Colors.white),
+            )
+          : null, // Sembunyikan FAB jika bukan di halaman barang
       bottomNavigationBar: BottomAppBar(
-        color: Color(0xFFFF7643),
+        color: Color(0xFFEF9823),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             IconButton(
-              icon: Icon(Icons.list, color: Colors.black),
+              icon: Icon(Icons.list,
+                  color: _selectedIndex == 0 ? Colors.black : Colors.white),
               onPressed: () {
-                // Logika untuk navigasi ke halaman lain
+                _onItemTapped(0);
               },
             ),
             IconButton(
-              icon: Icon(Icons.group, color: Colors.white),
+              icon: Icon(Icons.group,
+                  color: _selectedIndex == 1 ? Colors.black : Colors.white),
               onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => Memberlistusercomponent()));
-                // Logika untuk navigasi ke halaman lain
+                _onItemTapped(1);
               },
             ),
           ],
@@ -81,35 +125,73 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
     );
   }
 
-  Widget _buildItemCard(String title) {
+  Widget _buildItemCard(Map<String, dynamic> item, int index) {
+    final String title = item['nama_barang'] as String;
+    final int stock = item['stock'] as int? ?? 0;
+    final Uint8List? imageBytes = item['image'] as Uint8List?;
+
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Color(0xFFFF7643),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(Icons.sports_soccer,
-              color: const Color.fromARGB(255, 0, 0, 0), size: 30),
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(8.0),
+          child: imageBytes != null && imageBytes.isNotEmpty
+              ? Image.memory(
+                  imageBytes,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                )
+              : Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Color(0xFFEF9823),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.sports_soccer,
+                      color: const Color.fromARGB(255, 0, 0, 0), size: 30),
+                ),
         ),
-        title: Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text('Stok: $stock',
+                style: TextStyle(color: Colors.black54, fontSize: 12)),
+          ],
         ),
         subtitle: Row(
           children: [
-            Icon(Icons.add_box_outlined, size: 18),
-            SizedBox(width: 4),
-            Icon(Icons.check_box_outline_blank, size: 18),
-            SizedBox(width: 4),
-            Icon(Icons.indeterminate_check_box_outlined, size: 18),
-            SizedBox(width: 4),
-            Icon(Icons.date_range_outlined, size: 18)
+            IconButton(
+              icon: Icon(Icons.remove_circle_outline, color: Colors.red),
+              onPressed: () {
+                setState(() {
+                  if (quantities[index] > 0) {
+                    quantities[index]--;
+                  }
+                });
+              },
+            ),
+            Text(
+              quantities[index].toString(),
+              style: TextStyle(fontSize: 16),
+            ),
+            IconButton(
+              icon: Icon(Icons.add_circle_outline, color: Colors.green),
+              onPressed: () {
+                setState(() {
+                  if (quantities[index] < stock) {
+                    quantities[index]++;
+                  }
+                });
+              },
+            ),
           ],
         ),
         trailing: Icon(Icons.handyman, color: Colors.grey),

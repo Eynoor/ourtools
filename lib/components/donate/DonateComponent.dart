@@ -9,7 +9,7 @@ class _DonateComponentState extends State<Donatecomponent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF0098FF), // Warna biru latar belakang
+      backgroundColor: Color(0xFF012435), // Warna biru gelap latar belakang
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -27,7 +27,7 @@ class _DonateComponentState extends State<Donatecomponent> {
                 Icon(
                   Icons.handshake, // Gunakan ikon bawaan Flutter
                   size: 100,
-                  color: Color(0xFF0098FF),
+                  color: Color(0xFFEF9823),
                 ),
 
                 SizedBox(height: 16),
@@ -38,7 +38,7 @@ class _DonateComponentState extends State<Donatecomponent> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
                 ),
 
@@ -50,7 +50,7 @@ class _DonateComponentState extends State<Donatecomponent> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.normal,
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
                 ),
 
@@ -62,7 +62,7 @@ class _DonateComponentState extends State<Donatecomponent> {
                     // Tambahkan aksi ketika tombol diklik
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF0098FF),
+                    backgroundColor: Color(0xFFEF9823),
                     padding: EdgeInsets.symmetric(
                       horizontal: 24,
                       vertical: 12,
@@ -87,10 +87,10 @@ class _DonateComponentState extends State<Donatecomponent> {
       ),
       // Tombol Kembali
       appBar: AppBar(
-        backgroundColor: Color(0xFF0098FF),
+        backgroundColor: Color(0xFFEF9823),
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context); // Kembali ke layar sebelumnya
           },

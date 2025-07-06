@@ -4,6 +4,8 @@ import 'package:coba1/screens/Borrow/borrowUserScreens.dart';
 import 'package:coba1/screens/setting/Settingscreens.dart';
 import 'package:flutter/material.dart';
 import 'package:coba1/utils/db_helper.dart';
+import 'package:coba1/utils/session.dart';
+import 'package:coba1/screens/opening/opening.dart';
 
 class Homecomponent extends StatefulWidget {
   @override
@@ -11,10 +13,7 @@ class Homecomponent extends StatefulWidget {
 }
 
 class _HomecomponentState extends State<Homecomponent> {
-  // GlobalKey untuk mengakses ScaffoldState
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  // List untuk menyimpan data room
   List<Map<String, String>> rooms = [];
   final DBHelper _dbHelper = DBHelper();
 
@@ -25,34 +24,25 @@ class _HomecomponentState extends State<Homecomponent> {
   }
 
   Future<void> _loadRooms() async {
-    final List<Map<String, dynamic>> roomsFromDB = await _dbHelper.getRooms();
+    final session = Session();
+    final currentUser = session.currentUsername ?? 'unknown';
+
+    final List<Map<String, dynamic>> roomsFromDB =
+        await _dbHelper.getRooms(currentUser);
     if (roomsFromDB.isNotEmpty) {
       setState(() {
         rooms = roomsFromDB
-            .map((e) => {'title': e['title'] as String, 'subtitle': e['subtitle'] as String})
+            .map((e) => {
+                  'title': e['title'] as String,
+                  'subtitle': e['subtitle'] as String
+                })
             .toList();
       });
     } else {
       setState(() {
-        rooms = [
-          {
-            'title': 'Baseball prindapan',
-            'subtitle': 'G3 R4',
-          },
-          {
-            'title': 'Gg Merah Putih',
-            'subtitle': 'Rumah pak Totok',
-          },
-          {
-            'title': 'Kos Ms. Brow',
-            'subtitle': 'Pojok kanan kamar mandi deket kamar ms. brow',
-          },
-        ];
+        rooms = [];
       });
-      // Save default rooms to DB
-      for (var room in rooms) {
-        await _dbHelper.insertRoom(room);
-      }
+      // Do not insert default rooms for new users
     }
   }
 
@@ -74,26 +64,68 @@ class _HomecomponentState extends State<Homecomponent> {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
-                        return EnterRoomDialog();
+                        return EnterRoomDialog(
+                          onEnter: (String roomCode) {
+                            Navigator.pop(context);
+                            final matchedRoom = rooms.firstWhere(
+                              (room) =>
+                                  room['title']?.toLowerCase() ==
+                                  roomCode.toLowerCase(),
+                              orElse: () => {},
+                            );
+                            if (matchedRoom.isNotEmpty) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Borrowscreens(
+                                    roomTitle: matchedRoom['title'] ?? '',
+                                    roomSubtitle: matchedRoom['subtitle'] ?? '',
+                                  ),
+                                ),
+                              );
+                            } else {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text('Room tidak ditemukan'),
+                                  content: Text(
+                                      'Room dengan nama "$roomCode" tidak ada.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          },
+                        );
                       },
                     );
-                    print('Join Room dipilih');
                   },
                 ),
                 ListTile(
                   leading: Icon(Icons.create),
                   title: Text('Create Room'),
                   onTap: () {
-                    Navigator.pop(context); // Tutup modal bottom sheet sebelum showDialog
+                    Navigator.pop(context);
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
                         return CreateRoomDialog(
                           onCreate: (String title, String subtitle) async {
-                            print('Inserting room: $title, $subtitle');
-                            await _dbHelper.insertRoom({'title': title, 'subtitle': subtitle});
+                            final session = Session(); // ✅ PERBAIKAN
+                            final currentUser =
+                                session.currentUsername ?? 'unknown';
+
+                            await _dbHelper.insertRoom({
+                              'title': title,
+                              'subtitle': subtitle,
+                              'creatorUsername': currentUser,
+                            });
                             await _loadRooms();
-                            Navigator.pop(context); // Tutup dialog setelah membuat room
+                            Navigator.pop(context);
                           },
                         );
                       },
@@ -111,39 +143,119 @@ class _HomecomponentState extends State<Homecomponent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey, // Tambahkan GlobalKey ke Scaffold
-      // Drawer (Sidebar)
+      key: _scaffoldKey,
+      backgroundColor: Color(0xFF012435),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // Header Drawer
             DrawerHeader(
               decoration: BoxDecoration(
-                color: Color(0xFFFF7643),
-              ),
-              child: Text(
-                'Sidebar Header',
-                style: TextStyle(
-                  color: const Color.fromARGB(255, 0, 0, 0),
-                  fontSize: 24,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFEF9823), Color(0xFFFF7643)],
                 ),
               ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 35,
+                        backgroundColor: Colors.white,
+                        child: CircleAvatar(
+                          radius: 32,
+                          backgroundImage: NetworkImage("https://via.placeholder.com/150"),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              Session().currentUsername?.toUpperCase() ?? "USER",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              "Welcome back!",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Profile",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          "Online",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            // Menu 1
             ListTile(
-              title: Text('Menu 1'),
+              leading: Icon(Icons.settings, color: Colors.white),
+              title: Text('Settings', style: TextStyle(color: Colors.white)),
               onTap: () {
-                // Aksi saat Menu 1 dipilih
-                Navigator.pop(context); // Tutup drawer
+                Navigator.pop(context);
+                Navigator.pushNamed(context, Settingscreens.routeName);
               },
             ),
-            // Menu 2
             ListTile(
-              title: Text('Menu 2'),
+              leading: Icon(Icons.info_outline, color: Colors.white),
+              title: Text('About', style: TextStyle(color: Colors.white)),
               onTap: () {
-                // Aksi saat Menu 2 dipilih
-                Navigator.pop(context); // Tutup drawer
+                Navigator.pop(context);
+                // Add about page navigation
+              },
+            ),
+            Divider(color: Colors.white30),
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.red[300]),
+              title: Text('Logout', style: TextStyle(color: Colors.red[300])),
+              onTap: () {
+                // Clear session and navigate to opening
+                Session().currentUsername = null;
+                Navigator.pushNamedAndRemoveUntil(
+                  context, 
+                  Openingscreen.routeName,
+                  (route) => false,
+                );
               },
             ),
           ],
@@ -153,49 +265,37 @@ class _HomecomponentState extends State<Homecomponent> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Baris untuk Ikon Atas
             Container(
               height: 60,
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(
-                      color: const Color.fromARGB(255, 255, 255, 255),
-                      width: 1),
+                  bottom: BorderSide(color: Colors.white, width: 1),
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Ikon Menu (Kiri Atas)
                   Padding(
                     padding: const EdgeInsets.only(left: 20.0),
                     child: IconButton(
-                      icon: const Icon(Icons.menu),
+                      icon: Icon(Icons.menu),
                       iconSize: 30,
-                      color: const Color.fromARGB(255, 255, 255, 255),
-                      onPressed: () {
-                        // Buka drawer saat tombol menu ditekan
-                        _scaffoldKey.currentState?.openDrawer();
-                      },
+                      color: Colors.white,
+                      onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                     ),
                   ),
-                  // Ikon Tambah (Kanan Atas)
                   Padding(
                     padding: const EdgeInsets.only(right: 20.0),
                     child: IconButton(
-                      icon: const Icon(Icons.add),
+                      icon: Icon(Icons.add),
                       iconSize: 30,
-                      color: const Color.fromARGB(255, 255, 255, 255),
-                      onPressed: () {
-                        // Tampilkan modal bottom sheet saat tombol plus ditekan
-                        _showOptionsModal(context);
-                      },
+                      color: Colors.white,
+                      onPressed: () => _showOptionsModal(context),
                     ),
                   ),
                 ],
               ),
             ),
-            // Widget lainnya di sini
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -207,7 +307,6 @@ class _HomecomponentState extends State<Homecomponent> {
                       title: room['title'] ?? '',
                       subtitle: room['subtitle'] ?? '',
                       onTap: () {
-                        print('Room card tapped: ${room['title']}');
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -217,7 +316,6 @@ class _HomecomponentState extends State<Homecomponent> {
                             ),
                           ),
                         );
-                        print('Kartu "${room['title']}" ditekan');
                       },
                     ),
                   );
@@ -228,7 +326,7 @@ class _HomecomponentState extends State<Homecomponent> {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Color(0xFFFF7643),
+        color: Color(0xFFEF9823),
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
         child: Row(
@@ -237,7 +335,7 @@ class _HomecomponentState extends State<Homecomponent> {
             IconButton(
               onPressed: () {},
               icon: const Icon(Icons.home),
-              color: const Color.fromARGB(255, 255, 255, 255),
+              color: const Color.fromARGB(255, 3, 3, 3),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 20.0),
@@ -258,37 +356,40 @@ class _HomecomponentState extends State<Homecomponent> {
 
 Widget _buildCard(
     {required String title, required String subtitle, VoidCallback? onTap}) {
-  return Container(
-    padding: EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Color(0xFFFF7643),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        SizedBox(height: 8),
-        Row(
-          children: [
-            Icon(Icons.location_on, color: Colors.white, size: 16),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                subtitle,
-                style: TextStyle(fontSize: 14, color: Colors.white),
-              ),
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Color(0xFFEF9823),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-          ],
-        ),
-      ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.location_on, color: Colors.white, size: 16),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 14, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -310,17 +411,13 @@ class CreateRoomDialog extends StatelessWidget {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: 400),
           child: Column(
-            mainAxisSize: MainAxisSize.min, // Mengatur ukuran sesuai konten
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'Make your own room',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 20),
-              // Input untuk Room Name
               TextField(
                 controller: roomNameController,
                 decoration: InputDecoration(
@@ -329,7 +426,6 @@ class CreateRoomDialog extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 20),
-              // Input untuk Location
               TextField(
                 controller: locationController,
                 decoration: InputDecoration(
@@ -338,14 +434,12 @@ class CreateRoomDialog extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 20),
-              // Tombol untuk Membuat Room
               ElevatedButton(
                 onPressed: () {
-                  print('Make Room pressed with title: ${roomNameController.text}, location: ${locationController.text}');
                   onCreate(roomNameController.text, locationController.text);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFFF7643),
+                  backgroundColor: Color(0xFFEF9823),
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
                 child: Text(
@@ -363,6 +457,9 @@ class CreateRoomDialog extends StatelessWidget {
 
 class EnterRoomDialog extends StatelessWidget {
   final TextEditingController roomCodeController = TextEditingController();
+  final Function(String) onEnter;
+
+  EnterRoomDialog({required this.onEnter});
 
   @override
   Widget build(BuildContext context) {
@@ -376,13 +473,9 @@ class EnterRoomDialog extends StatelessWidget {
           children: [
             Text(
               'Room code',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
-            // Input untuk Room Code
             TextField(
               controller: roomCodeController,
               decoration: InputDecoration(
@@ -391,16 +484,12 @@ class EnterRoomDialog extends StatelessWidget {
               ),
             ),
             SizedBox(height: 20),
-            // Tombol ENTER
             ElevatedButton(
               onPressed: () {
-                // Logika untuk memproses room code
-                Navigator.pushNamed(context, BorrowUserscreens.routeName);
-                print('Room Code: ${roomCodeController.text}');
-                //Navigator.pop(context); // Menutup dialog
+                onEnter(roomCodeController.text);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFFF7643),
+                backgroundColor: Color(0xFFEF9823),
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
               ),
               child: Text(

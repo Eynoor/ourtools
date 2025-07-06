@@ -1,4 +1,5 @@
 import 'package:coba1/screens/opening/opening.dart';
+import 'package:coba1/utils/session.dart';
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -8,6 +9,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String profileImage = "https://via.placeholder.com/150"; // Default image URL.
+  final Session session = Session();
 
   // Fungsi untuk mengganti foto profil.
   void _changeProfileImage() async {
@@ -21,10 +23,12 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF012435),
       appBar: AppBar(
-        title: Text("Profil"),
+        backgroundColor: Color(0xFFEF9823),
+        title: Text("Profil", style: TextStyle(color: Colors.white)),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context); // Kembali ke halaman sebelumnya.
           },
@@ -50,7 +54,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     onTap: _changeProfileImage,
                     child: CircleAvatar(
                       radius: 20,
-                      backgroundColor: Colors.blue,
+                      backgroundColor: Color(0xFF012435),
                       child: Icon(
                         Icons.camera_alt,
                         color: Colors.white,
@@ -63,10 +67,11 @@ class _ProfilePageState extends State<ProfilePage> {
             SizedBox(height: 16),
             // Nama pengguna.
             Text(
-              "YOGI LISTENER",
+              session.currentUsername?.toUpperCase() ?? "USER",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
+                color: Colors.white,
               ),
             ),
             SizedBox(height: 40),
@@ -79,7 +84,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Navigator.pushNamed(context, Openingscreen.routeName);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: Color(0xFF012435),
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),

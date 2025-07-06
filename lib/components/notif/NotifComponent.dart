@@ -14,10 +14,12 @@ class _NotifcomponentState extends State<NotifComponent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF012435),
       appBar: AppBar(
-        title: Text('Notification'),
+        title: Text('Notification', style: TextStyle(color: Colors.white)),
+        backgroundColor: Color(0xFFEF9823),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -67,7 +69,7 @@ class _NotifcomponentState extends State<NotifComponent> {
       padding: EdgeInsets.symmetric(horizontal: 16),
       height: 60,
       decoration: BoxDecoration(
-        color: Colors.blue,
+        color: Color(0xFFEF9823),
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
@@ -98,7 +100,7 @@ class _NotifcomponentState extends State<NotifComponent> {
       padding: EdgeInsets.symmetric(horizontal: 16),
       height: 60,
       decoration: BoxDecoration(
-        color: Colors.blue,
+        color: Color(0xFFEF9823),
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(

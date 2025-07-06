@@ -10,7 +10,7 @@ class Contactuscomponent extends StatelessWidget {
           width: 393,
           height: 852,
           clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(color: Colors.white),
+          decoration: BoxDecoration(color: Color(0xFF012435)),
           child: Stack(
             children: [
               Positioned(
@@ -20,7 +20,7 @@ class Contactuscomponent extends StatelessWidget {
                   width: 393,
                   height: 588,
                   decoration: ShapeDecoration(
-                    color: Color(0xFF0098FF),
+                    color: Color(0xFFEF9823),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(67),
                     ),
@@ -33,7 +33,7 @@ class Contactuscomponent extends StatelessWidget {
                 child: Text(
                   'Need some helps?',
                   style: TextStyle(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 35,
                     fontFamily: 'Work Sans',
                     fontWeight: FontWeight.w600,
@@ -46,7 +46,7 @@ class Contactuscomponent extends StatelessWidget {
                 child: Text(
                   'Had trouble,',
                   style: GoogleFonts.workSans(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
                   ),

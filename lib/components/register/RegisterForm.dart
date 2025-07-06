@@ -1,9 +1,11 @@
+
 import 'package:coba1/components/custom_surfix_icon.dart';
 import 'package:coba1/components/default_custom_button_color.dart';
 import 'package:coba1/components/identitas/identitasComponent.dart';
-import 'package:coba1/size_config.dart';
 import 'package:coba1/utils/constants.dart';
+import 'package:coba1/utils/db_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:coba1/size_config.dart';
 
 class RegisterForm extends StatefulWidget {
   @override
@@ -15,9 +17,9 @@ class _RegisterFormState extends State<RegisterForm> {
 
   // Controllers untuk mengambil nilai input
   final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _emailController    = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmController  = TextEditingController();
+  bool _isSendingOtp = false;
 
   void showSnackbar(String message, bool success) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -54,8 +56,21 @@ class _RegisterFormState extends State<RegisterForm> {
     );
   }
 
+  Future<void> _registerUser() async {
+    final dbHelper = DBHelper();
+    final username = _usernameController.text;
+    final password = _passwordController.text;
+
+    // Simpan data user ke database
+    await dbHelper.insertUser({
+      'username': username,
+      'password': password,
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    print("RegisterForm build method dipanggil");
     return Form(
       key: _formKey,
       child: Column(
@@ -70,30 +85,57 @@ class _RegisterFormState extends State<RegisterForm> {
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: getProportionateScreenHeight(50)),
-          buildUserName(),
           SizedBox(height: getProportionateScreenHeight(20)),
-          buildEmail(),
+          buildUserName(),
           SizedBox(height: getProportionateScreenHeight(20)),
           buildPassword(),
           SizedBox(height: getProportionateScreenHeight(20)),
           buildConfirmPassword(),
           SizedBox(height: getProportionateScreenHeight(30)),
-          DefaultButtonCustomeColor(
-            color: kPrimaryColor,
-            text: "Register",
-            press: () {
-              if (_formKey.currentState!.validate()) {
-                showSnackbar('Registrasi berhasil!', true);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Identitascomponent(),
-                  ),
-                );
-              }
-            },
-          ),
+          ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size(double.infinity, getProportionateScreenHeight(56)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                backgroundColor: kPrimaryColor,
+              ),
+              onPressed: () async {
+                print("Tombol Register ditekan (ElevatedButton)");
+                if (_formKey.currentState!.validate()) {
+                  _formKey.currentState!.save();
+                  print("Form valid");
+                  try {
+                    await _registerUser();
+                    print("User registered successfully");
+                  } catch (e) {
+                    print("Error during user registration: \$e");
+                  }
+                  try {
+                    showSnackbar('Registrasi berhasil!', true);
+                    print("Navigating to Identitascomponent");
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Identitascomponent(),
+                      ),
+                    );
+                    print("Navigation completed");
+                  } catch (e) {
+                    print("Error during navigation: \$e");
+                  }
+                } else {
+                  print("Form tidak valid");
+                }
+              },
+              child: Text(
+                "Register",
+                style: TextStyle(
+                  fontSize: getProportionateScreenWidth(18),
+                  color: Colors.white,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -109,25 +151,6 @@ class _RegisterFormState extends State<RegisterForm> {
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Username tidak boleh kosong';
-        }
-        return null;
-      },
-    );
-  }
-
-  TextFormField buildEmail() {
-    return TextFormField(
-      controller: _emailController,
-      keyboardType: TextInputType.emailAddress,
-      decoration: _buildInputDecoration(
-        hint: 'Email',
-        svgIcon: "assets/icons/Mail.svg",
-      ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Email tidak boleh kosong';
-        } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-          return 'Masukkan email yang valid';
         }
         return null;
       },

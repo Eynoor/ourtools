@@ -1,7 +1,7 @@
 import 'package:coba1/components/cs/ContactusComponent.dart';
 import 'package:coba1/components/donate/DonateComponent.dart';
 import 'package:coba1/components/notif/NotifComponent.dart';
-import 'package:coba1/components/setting/profil_page.dart';
+
 import 'package:coba1/screens/Home/HomeScreens.dart';
 import 'package:coba1/size_config.dart';
 import 'package:coba1/utils/constants.dart';
@@ -19,6 +19,7 @@ class _SettingcomponentState extends State<Settingcomponent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF012435),
       body: SafeArea(
         child: SizedBox(
           width: double.infinity,
@@ -42,10 +43,9 @@ class _SettingcomponentState extends State<Settingcomponent> {
                     // ),
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ProfilePage()),
+                        // Profile is now in sidebar, no separate page needed
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Profile available in home sidebar')),
                         );
                       },
                       child: Image.asset(
@@ -94,7 +94,7 @@ class _SettingcomponentState extends State<Settingcomponent> {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        color: kPrimaryColor,
+        color: Color(0xFFEF9823),
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
         child: Row(
@@ -105,24 +105,19 @@ class _SettingcomponentState extends State<Settingcomponent> {
                 Navigator.pushNamed(context, Homescreens.routeName);
               },
               icon: const Icon(Icons.home),
-              color: const Color.fromARGB(255, 0, 0, 0),
+              color: Colors.white,
             ),
             Padding(
               padding: const EdgeInsets.only(right: 20.0),
               child: IconButton(
                 onPressed: () {},
                 icon: const Icon(Icons.settings),
-                color: Colors.black,
+                color: const Color.fromARGB(255, 0, 0, 0),
               ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: kPrimaryColor,
-        onPressed: () {},
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
@@ -134,7 +129,7 @@ class _SettingcomponentState extends State<Settingcomponent> {
         width: double.infinity,
         height: 60,
         decoration: BoxDecoration(
-          color: kPrimaryColor,
+          color: Color(0xFFEF9823),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
