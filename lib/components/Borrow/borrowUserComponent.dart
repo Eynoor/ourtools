@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:coba1/utils/db_helper.dart';
 
 class BorrowUsercomponent extends StatefulWidget {
+  final int roomId;
+  BorrowUsercomponent({required this.roomId});
+
   @override
   _BorrowUsercomponentState createState() => _BorrowUsercomponentState();
 }
@@ -49,7 +52,7 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
     setState(() {
       _isLoading = true;
     });
-    final data = await _dbHelper.getAllBarang();
+    final data = await _dbHelper.getBarangByRoom(widget.roomId);
     setState(() {
       items = data;
       quantities = List<int>.filled(items.length, 0);
@@ -88,18 +91,20 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
           ? FloatingActionButton(
               backgroundColor: Color(0xFFEF9823),
               onPressed: () async {
-                // Import Barangcomponent dengan path yang benar
                 final newItem = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => Barangcomponent()),
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        Barangcomponent(roomId: widget.roomId),
+                  ),
                 );
                 if (newItem == true) {
-                  _loadBarang(); // Muat ulang data jika ada barang baru
+                  _loadBarang();
                 }
               },
               child: Icon(Icons.add, color: Colors.white),
             )
-          : null, // Sembunyikan FAB jika bukan di halaman barang
+          : null,
       bottomNavigationBar: BottomAppBar(
         color: Color(0xFFEF9823),
         child: Row(

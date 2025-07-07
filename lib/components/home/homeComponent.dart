@@ -26,15 +26,15 @@ class _HomecomponentState extends State<Homecomponent> {
   Future<void> _loadRooms() async {
     final session = Session();
     final currentUser = session.currentUsername ?? 'unknown';
-
     final List<Map<String, dynamic>> roomsFromDB =
-        await _dbHelper.getRooms(currentUser);
+        await _dbHelper.getAllRoomsForUser(currentUser);
     if (roomsFromDB.isNotEmpty) {
       setState(() {
         rooms = roomsFromDB
             .map((e) => {
                   'title': e['title'] as String,
-                  'subtitle': e['subtitle'] as String
+                  'subtitle': e['subtitle'] as String,
+                  'creatorUsername': e['creatorUsername'] as String? ?? '',
                 })
             .toList();
       });
@@ -42,7 +42,6 @@ class _HomecomponentState extends State<Homecomponent> {
       setState(() {
         rooms = [];
       });
-      // Do not insert default rooms for new users
     }
   }
 
@@ -65,31 +64,55 @@ class _HomecomponentState extends State<Homecomponent> {
                       context: context,
                       builder: (BuildContext context) {
                         return EnterRoomDialog(
-                          onEnter: (String roomCode) {
+                          onEnter: (String roomCode) async {
                             Navigator.pop(context);
-                            final matchedRoom = rooms.firstWhere(
-                              (room) =>
-                                  room['title']?.toLowerCase() ==
-                                  roomCode.toLowerCase(),
-                              orElse: () => {},
-                            );
-                            if (matchedRoom.isNotEmpty) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => Borrowscreens(
-                                    roomTitle: matchedRoom['title'] ?? '',
-                                    roomSubtitle: matchedRoom['subtitle'] ?? '',
+                            final dbHelper = DBHelper();
+                            final roomsFromDB =
+                                await dbHelper.getRoomByTitle(roomCode);
+                            if (roomsFromDB.isNotEmpty) {
+                              final roomData = roomsFromDB.first;
+                              final session = Session();
+                              final currentUser =
+                                  session.currentUsername ?? 'unknown';
+                              final alreadyMember =
+                                  await dbHelper.isUserMemberOfRoom(
+                                      roomData['id'], currentUser);
+                              if (!alreadyMember) {
+                                await dbHelper.addMemberToRoom(
+                                    roomData['id'], currentUser);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => Borrowscreens(
+                                      roomTitle: roomData['title'] ?? '',
+                                      roomSubtitle: roomData['subtitle'] ?? '',
+                                    ),
                                   ),
-                                ),
-                              );
+                                );
+                              } else {
+                                // Sudah member, tampilkan pesan dan tetap navigasi ke room
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'Kamu sudah menjadi member room ini.')),
+                                );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => Borrowscreens(
+                                      roomTitle: roomData['title'] ?? '',
+                                      roomSubtitle: roomData['subtitle'] ?? '',
+                                    ),
+                                  ),
+                                );
+                              }
                             } else {
                               showDialog(
                                 context: context,
                                 builder: (context) => AlertDialog(
                                   title: Text('Room tidak ditemukan'),
                                   content: Text(
-                                      'Room dengan nama "$roomCode" tidak ada.'),
+                                      'Room dengan nama "${roomCode}" tidak ada.'),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(context),
@@ -167,7 +190,8 @@ class _HomecomponentState extends State<Homecomponent> {
                         backgroundColor: Colors.white,
                         child: CircleAvatar(
                           radius: 32,
-                          backgroundImage: NetworkImage("https://via.placeholder.com/150"),
+                          backgroundImage:
+                              NetworkImage("https://via.placeholder.com/150"),
                         ),
                       ),
                       SizedBox(width: 16),
@@ -176,7 +200,8 @@ class _HomecomponentState extends State<Homecomponent> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              Session().currentUsername?.toUpperCase() ?? "USER",
+                              Session().currentUsername?.toUpperCase() ??
+                                  "USER",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
@@ -209,7 +234,8 @@ class _HomecomponentState extends State<Homecomponent> {
                         ),
                       ),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
@@ -252,7 +278,7 @@ class _HomecomponentState extends State<Homecomponent> {
                 // Clear session and navigate to opening
                 Session().currentUsername = null;
                 Navigator.pushNamedAndRemoveUntil(
-                  context, 
+                  context,
                   Openingscreen.routeName,
                   (route) => false,
                 );
@@ -306,6 +332,7 @@ class _HomecomponentState extends State<Homecomponent> {
                     child: _buildCard(
                       title: room['title'] ?? '',
                       subtitle: room['subtitle'] ?? '',
+                      creatorUsername: room['creatorUsername'],
                       onTap: () {
                         Navigator.push(
                           context,
@@ -316,6 +343,51 @@ class _HomecomponentState extends State<Homecomponent> {
                             ),
                           ),
                         );
+                      },
+                      onDelete: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text('Hapus Room'),
+                            content: Text(
+                                'Yakin ingin menghapus room ini? Semua barang di dalamnya juga akan terhapus.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: Text('Batal'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: Text('Hapus',
+                                    style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          // Ambil id room dari DB
+                          final session = Session();
+                          final currentUser =
+                              session.currentUsername ?? 'unknown';
+                          final dbHelper = DBHelper();
+                          final roomsFromDB =
+                              await dbHelper.getRooms(currentUser);
+                          final roomData = roomsFromDB.firstWhere(
+                            (r) =>
+                                r['title'] == room['title'] &&
+                                r['subtitle'] == room['subtitle'],
+                            orElse: () => {},
+                          );
+                          if (roomData.isNotEmpty) {
+                            await dbHelper.deleteRoom(roomData['id']);
+                            // ignore: use_build_context_synchronously
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Room berhasil dihapus')),
+                            );
+                            // ignore: use_build_context_synchronously
+                            await _loadRooms(); // reload rooms agar UI terupdate
+                          }
+                        }
                       },
                     ),
                   );
@@ -355,7 +427,14 @@ class _HomecomponentState extends State<Homecomponent> {
 }
 
 Widget _buildCard(
-    {required String title, required String subtitle, VoidCallback? onTap}) {
+    {required String title,
+    required String subtitle,
+    String? creatorUsername,
+    VoidCallback? onTap,
+    VoidCallback? onDelete}) {
+  final session = Session();
+  final currentUser = session.currentUsername ?? 'unknown';
+  final isAdminRoom = creatorUsername == currentUser;
   return GestureDetector(
     onTap: onTap,
     child: Container(
@@ -363,31 +442,63 @@ Widget _buildCard(
       decoration: BoxDecoration(
         color: Color(0xFFEF9823),
         borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
             ),
           ),
-          SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.location_on, color: Colors.white, size: 16),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 14, color: Colors.white),
+          if (onDelete != null && isAdminRoom)
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF3B30), Color(0xFFB71C1C)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
               ),
-            ],
-          ),
+              child: IconButton(
+                icon: Icon(Icons.delete, color: Colors.white, size: 28),
+                onPressed: onDelete,
+                tooltip: 'Hapus Room',
+              ),
+            ),
         ],
       ),
     ),

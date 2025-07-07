@@ -3,6 +3,7 @@ import 'package:coba1/components/MemberList/memberListAdmin.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:coba1/utils/db_helper.dart';
+import 'package:coba1/utils/session.dart';
 
 class Borrowcomponent extends StatefulWidget {
   final String roomTitle;
@@ -21,11 +22,37 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
   int _selectedIndex = 0; // 0 untuk daftar barang, 1 untuk daftar member
   // State to hold quantity for each item, initialized to 0
   late List<int> quantities;
+  int? roomId;
+  String? adminUsername;
 
   @override
   void initState() {
     super.initState();
-    _loadBarang();
+    _initRoom();
+  }
+
+  Future<void> _initRoom() async {
+    // Ambil roomId dari database berdasarkan judul room
+    final rooms = await _dbHelper.getRoomsByTitle(widget.roomTitle);
+    if (rooms.isNotEmpty) {
+      setState(() {
+        roomId = rooms.first['id'];
+        adminUsername = rooms.first['creatorUsername'];
+      });
+      _loadBarang();
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Room tidak ditemukan')),
+      );
+    }
+  }
+
+  bool get isAdmin {
+    final session = Session();
+    return session.currentUsername == adminUsername;
   }
 
   // Fungsi untuk mengubah state saat item di BottomAppBar ditekan
@@ -40,7 +67,9 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
     return _isLoading
         ? Center(child: CircularProgressIndicator())
         : items.isEmpty
-            ? Center(child: Text('Belum ada barang.', style: TextStyle(color: Colors.white)))
+            ? Center(
+                child: Text('Belum ada barang.',
+                    style: TextStyle(color: Colors.white)))
             : ListView.builder(
                 itemCount: items.length,
                 itemBuilder: (context, index) {
@@ -49,10 +78,11 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
   }
 
   Future<void> _loadBarang() async {
+    if (roomId == null) return;
     setState(() {
       _isLoading = true;
     });
-    final data = await _dbHelper.getAllBarang();
+    final data = await _dbHelper.getBarangByRoom(roomId!);
     setState(() {
       items = data;
       quantities = List<int>.filled(items.length, 0);
@@ -93,70 +123,6 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFF012435),
-      appBar: AppBar(
-        backgroundColor: Color(0xFFEF9823),
-        title: Text(
-          _selectedIndex == 0 ? widget.roomTitle : 'Daftar Member',
-          style: TextStyle(color: Colors.white),
-        ),
-        leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-        automaticallyImplyLeading: false,
-      ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: <Widget>[
-          // Halaman 0: Daftar Barang
-          _buildItemListView(),
-          // Halaman 1: Daftar Member
-          Memberlistadmin(),
-        ],
-      ),      floatingActionButton: _selectedIndex == 0 ? FloatingActionButton(
-        backgroundColor: Color(0xFFEF9823),
-        onPressed: () async {
-          final newItem = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => Barangcomponent()),
-          );
-          if (newItem == true) {
-            _loadBarang(); // Muat ulang data jika ada barang baru
-          }
-        },
-        child: Icon(Icons.add, color: Colors.white),
-      ) : null, // Sembunyikan FAB jika bukan di halaman barang
-      bottomNavigationBar: BottomAppBar(
-        color: Color(0xFFEF9823),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            IconButton(
-              icon: Icon(Icons.list,
-                  color: _selectedIndex == 0 ? Colors.black : Colors.white),
-              onPressed: () {
-                _onItemTapped(0);
-              },
-            ),
-            IconButton(
-              icon: Icon(Icons.group,
-                  color: _selectedIndex == 1 ? Colors.black : Colors.white),
-              onPressed: () {
-                _onItemTapped(1);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildItemCard(Map<String, dynamic> item, int index) {
     final int id = item['id'] as int;
     final String title = item['nama_barang'] as String;
@@ -195,7 +161,8 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
               title,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            Text('Stok: $stock', style: TextStyle(color: Colors.black54, fontSize: 12)),
+            Text('Stok: $stock',
+                style: TextStyle(color: Colors.black54, fontSize: 12)),
           ],
         ),
         subtitle: Row(
@@ -226,15 +193,90 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
             ),
           ],
         ),
-        trailing: IconButton(
-          icon: Icon(Icons.delete, color: Colors.red[400]),
-          onPressed: () {
-            _deleteBarang(id);
-          },
-        ),
+        trailing: isAdmin
+            ? IconButton(
+                icon: Icon(Icons.delete, color: Colors.red[400]),
+                onPressed: () {
+                  _deleteBarang(id);
+                },
+              )
+            : null,
         onTap: () {
           print("Tapped on $title");
         },
+      ),
+    );
+  }
+
+  void _openAddBarang() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Barangcomponent(roomId: roomId!),
+      ),
+    );
+    if (result == true) {
+      _loadBarang();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFF012435),
+      appBar: AppBar(
+        backgroundColor: Color(0xFFEF9823),
+        title: Text(
+          _selectedIndex == 0 ? widget.roomTitle : 'Daftar Member',
+          style: TextStyle(color: Colors.white),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        automaticallyImplyLeading: false,
+      ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: <Widget>[
+          // Halaman 0: Daftar Barang
+          _buildItemListView(),
+          // Halaman 1: Daftar Member
+          Memberlistadmin(roomTitle: widget.roomTitle),
+        ],
+      ),
+      floatingActionButton: _selectedIndex == 0 && isAdmin
+          ? FloatingActionButton(
+              backgroundColor: Color(0xFFEF9823),
+              onPressed: () async {
+                _openAddBarang();
+              },
+              child: Icon(Icons.add, color: Colors.white),
+            )
+          : null, // Sembunyikan FAB jika bukan di halaman barang atau bukan admin
+      bottomNavigationBar: BottomAppBar(
+        color: Color(0xFFEF9823),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              icon: Icon(Icons.list,
+                  color: _selectedIndex == 0 ? Colors.black : Colors.white),
+              onPressed: () {
+                _onItemTapped(0);
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.group,
+                  color: _selectedIndex == 1 ? Colors.black : Colors.white),
+              onPressed: () {
+                _onItemTapped(1);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

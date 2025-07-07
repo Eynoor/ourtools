@@ -4,10 +4,13 @@ import 'package:coba1/screens/Borrow/borrowScreens.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert'; // Untuk mengelola base64 encoding
 import 'package:image/image.dart' as img; // Import package image
-import 'dart:typed_data'; 
+import 'dart:typed_data';
 import 'package:coba1/utils/db_helper.dart'; // Ganti ApiService dengan DBHelper
 
 class Barangcomponent extends StatefulWidget {
+  final int roomId;
+  Barangcomponent({required this.roomId});
+
   @override
   _BarangcomponentState createState() => _BarangcomponentState();
 }
@@ -16,7 +19,8 @@ class _BarangcomponentState extends State<Barangcomponent> {
   final TextEditingController _itemNameController = TextEditingController();
   final TextEditingController _itemStockController = TextEditingController();
   final DBHelper _dbHelper = DBHelper(); // Gunakan DBHelper
-  Uint8List? _selectedImageBytes; // Untuk menyimpan gambar yang dipilih/dicapture dalam bentuk bytes
+  Uint8List?
+      _selectedImageBytes; // Untuk menyimpan gambar yang dipilih/dicapture dalam bentuk bytes
   bool _isLoading = false; // Untuk menunjukkan loading state
 
   // Fungsi untuk memilih gambar (opsional, bisa dihubungkan dengan Camera.dart)
@@ -67,13 +71,15 @@ class _BarangcomponentState extends State<Barangcomponent> {
 
     try {
       final resizedImageBytes = await _resizeImage(_selectedImageBytes);
-
+      print('Insert barang dengan room_id: [33m[1m[4m${widget.roomId}[0m');
       // Simpan barang ke database lokal
-      await _dbHelper.insertBarang({
+      final result = await _dbHelper.insertBarang({
         'nama_barang': namaBarang,
         'image': resizedImageBytes,
         'stock': stock,
+        'room_id': widget.roomId,
       });
+      print('Insert result: $result');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Barang berhasil ditambahkan')),
@@ -83,8 +89,9 @@ class _BarangcomponentState extends State<Barangcomponent> {
       if (mounted) {
         Navigator.pop(context, true);
       }
-    } catch (e) {
+    } catch (e, stack) {
       print('Error saat menambahkan barang: $e');
+      print(stack);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal menambahkan barang: $e')),
       );
@@ -149,7 +156,7 @@ class _BarangcomponentState extends State<Barangcomponent> {
             ),
             SizedBox(height: 8),
             GestureDetector(
-            onTap: () async {
+              onTap: () async {
                 // Navigasi ke kamera atau file picker
                 final Uint8List? selectedImageBytes = await Navigator.push(
                   context,

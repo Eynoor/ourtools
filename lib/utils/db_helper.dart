@@ -14,12 +14,15 @@ class DBHelper {
     _database = await _initDB('rooms.db');
     return _database!;
   }
-  
+
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 5, onCreate: _createDB, onUpgrade: _upgradeDB);
+    return await openDatabase(path,
+        version: 7, // Upgrade ke versi 7 agar migrasi dijalankan
+        onCreate: _createDB,
+        onUpgrade: _upgradeDB);
   }
 
   Future _createDB(Database db, int version) async {
@@ -45,7 +48,17 @@ class DBHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nama_barang TEXT NOT NULL,
         image BLOB,
-        stock INTEGER NOT NULL DEFAULT 0
+        stock INTEGER NOT NULL DEFAULT 0,
+        room_id INTEGER NOT NULL,
+        FOREIGN KEY(room_id) REFERENCES rooms(id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE room_members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        room_id INTEGER NOT NULL,
+        username TEXT NOT NULL,
+        FOREIGN KEY(room_id) REFERENCES rooms(id) ON DELETE CASCADE
       )
     ''');
   }
@@ -71,13 +84,29 @@ class DBHelper {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nama_barang TEXT NOT NULL,
           image BLOB,
-          stock INTEGER NOT NULL DEFAULT 0
+          stock INTEGER NOT NULL DEFAULT 0,
+          room_id INTEGER NOT NULL,
+          FOREIGN KEY(room_id) REFERENCES rooms(id) ON DELETE CASCADE
         )
       ''');
     }
     if (oldVersion < 5) {
       await db.execute('''
         ALTER TABLE barang ADD COLUMN stock INTEGER NOT NULL DEFAULT 0
+      ''');
+    }
+    if (oldVersion < 6) {
+      // Tambahkan kolom room_id jika belum ada
+      await db.execute("ALTER TABLE barang ADD COLUMN room_id INTEGER;");
+    }
+    if (oldVersion < 7) {
+      await db.execute('''
+        CREATE TABLE room_members (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          room_id INTEGER NOT NULL,
+          username TEXT NOT NULL,
+          FOREIGN KEY(room_id) REFERENCES rooms(id) ON DELETE CASCADE
+        )
       ''');
     }
   }
@@ -101,7 +130,8 @@ class DBHelper {
     return await db.insert('users', user);
   }
 
-  Future<List<Map<String, dynamic>>> getUserByCredentials(String username, String password) async {
+  Future<List<Map<String, dynamic>>> getUserByCredentials(
+      String username, String password) async {
     final db = await database;
     return await db.query(
       'users',
@@ -114,6 +144,16 @@ class DBHelper {
   Future<int> insertBarang(Map<String, dynamic> barang) async {
     final db = await database;
     return await db.insert('barang', barang);
+  }
+
+  Future<List<Map<String, dynamic>>> getBarangByRoom(int roomId) async {
+    final db = await database;
+    return await db.query(
+      'barang',
+      where: 'room_id = ?',
+      whereArgs: [roomId],
+      orderBy: 'id DESC',
+    );
   }
 
   // Fungsi untuk mengambil semua barang dari database
@@ -130,5 +170,97 @@ class DBHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<List<Map<String, dynamic>>> getRoomsByTitle(String title) async {
+    final db = await database;
+    return await db.query(
+      'rooms',
+      where: 'title = ?',
+      whereArgs: [title],
+    );
+  }
+
+  Future<int> deleteRoom(int id) async {
+    final db = await database;
+    // Hapus room berdasarkan id, barang terkait akan terhapus otomatis karena ON DELETE CASCADE
+    return await db.delete(
+      'rooms',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<String?> getRoomAdminByTitle(String title) async {
+    final db = await database;
+    final result = await db.query(
+      'rooms',
+      columns: ['creatorUsername'],
+      where: 'title = ?',
+      whereArgs: [title],
+      limit: 1,
+    );
+    if (result.isNotEmpty) {
+      return result.first['creatorUsername'] as String?;
+    }
+    return null;
+  }
+
+  Future<int> addMemberToRoom(int roomId, String username) async {
+    final db = await database;
+    return await db.insert('room_members', {
+      'room_id': roomId,
+      'username': username,
+    });
+  }
+
+  Future<List<String>> getMembersByRoomId(int roomId) async {
+    final db = await database;
+    final result = await db.query(
+      'room_members',
+      columns: ['username'],
+      where: 'room_id = ?',
+      whereArgs: [roomId],
+    );
+    return result.map((e) => e['username'] as String).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getRoomByTitle(String title) async {
+    final db = await database;
+    return await db.query(
+      'rooms',
+      where: 'title = ?',
+      whereArgs: [title],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getAllRoomsForUser(String username) async {
+    final db = await database;
+    // Room yang dibuat user
+    final createdRooms = await db.query(
+      'rooms',
+      where: 'creatorUsername = ?',
+      whereArgs: [username],
+    );
+    // Room yang di-join user
+    final joinedRooms = await db.rawQuery('''
+      SELECT rooms.* FROM rooms
+      INNER JOIN room_members ON rooms.id = room_members.room_id
+      WHERE room_members.username = ?
+    ''', [username]);
+    // Gabungkan dan hilangkan duplikat berdasarkan id
+    final allRooms = {...createdRooms, ...joinedRooms}.toList();
+    return allRooms;
+  }
+
+  Future<bool> isUserMemberOfRoom(int roomId, String username) async {
+    final db = await database;
+    final result = await db.query(
+      'room_members',
+      where: 'room_id = ? AND username = ?',
+      whereArgs: [roomId, username],
+      limit: 1,
+    );
+    return result.isNotEmpty;
   }
 }
