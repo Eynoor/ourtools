@@ -1,5 +1,6 @@
 import 'package:coba1/components/MemberList/memberListUserComponent.dart';
 import 'package:coba1/components/Barang/barangComponent.dart';
+import 'package:coba1/components/Monitoring/monitoringComponent.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:coba1/utils/db_helper.dart';
@@ -16,7 +17,7 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
   final DBHelper _dbHelper = DBHelper();
   List<Map<String, dynamic>> items = [];
   bool _isLoading = true;
-  int _selectedIndex = 0; // 0 untuk daftar barang, 1 untuk daftar member
+  int _selectedIndex = 0; // 0 untuk daftar barang, 1 untuk daftar member, 2 untuk monitoring
   // State to hold quantity for each item, initialized to 0
   late List<int> quantities;
 
@@ -52,12 +53,22 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
     setState(() {
       _isLoading = true;
     });
-    final data = await _dbHelper.getBarangByRoom(widget.roomId);
-    setState(() {
-      items = data;
-      quantities = List<int>.filled(items.length, 0);
-      _isLoading = false;
-    });
+    try {
+      final data = await _dbHelper.getBarangByRoom(widget.roomId);
+      setState(() {
+        items = data;
+        // Pastikan quantities selalu memiliki panjang yang sama dengan items
+        quantities = List<int>.filled(items.length >= 0 ? items.length : 0, 0);
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading barang: $e');
+      setState(() {
+        items = [];
+        quantities = [];
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -67,7 +78,11 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
       appBar: AppBar(
         backgroundColor: Color(0xFFEF9823),
         title: Text(
-          _selectedIndex == 0 ? 'Gg Merah Putih' : 'Daftar Member',
+          _selectedIndex == 0 
+              ? 'Gg Merah Putih' 
+              : _selectedIndex == 1 
+                  ? 'Daftar Member' 
+                  : 'Monitoring Peminjaman',
           style: TextStyle(color: Colors.white),
         ),
         leading: IconButton(
@@ -85,6 +100,8 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
           _buildItemListView(),
           // Halaman 1: Daftar Member
           Memberlistusercomponent(),
+          // Halaman 2: Monitoring
+          MonitoringComponent(roomId: widget.roomId, roomTitle: 'Gg Merah Putih'),
         ],
       ),
       floatingActionButton: _selectedIndex == 0
@@ -122,6 +139,13 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
                   color: _selectedIndex == 1 ? Colors.black : Colors.white),
               onPressed: () {
                 _onItemTapped(1);
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.monitor,
+                  color: _selectedIndex == 2 ? Colors.black : Colors.white),
+              onPressed: () {
+                _onItemTapped(2);
               },
             ),
           ],
@@ -177,21 +201,21 @@ class _BorrowUsercomponentState extends State<BorrowUsercomponent> {
               icon: Icon(Icons.remove_circle_outline, color: Colors.red),
               onPressed: () {
                 setState(() {
-                  if (quantities[index] > 0) {
+                  if (index < quantities.length && quantities[index] > 0) {
                     quantities[index]--;
                   }
                 });
               },
             ),
             Text(
-              quantities[index].toString(),
+              index < quantities.length ? quantities[index].toString() : '0',
               style: TextStyle(fontSize: 16),
             ),
             IconButton(
               icon: Icon(Icons.add_circle_outline, color: Colors.green),
               onPressed: () {
                 setState(() {
-                  if (quantities[index] < stock) {
+                  if (index < quantities.length && quantities[index] < stock) {
                     quantities[index]++;
                   }
                 });

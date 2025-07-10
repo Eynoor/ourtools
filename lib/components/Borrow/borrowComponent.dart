@@ -1,5 +1,6 @@
 import 'package:coba1/components/Barang/barangComponent.dart';
 import 'package:coba1/components/MemberList/memberListAdmin.dart';
+import 'package:coba1/components/Monitoring/monitoringComponent.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:coba1/utils/db_helper.dart';
@@ -19,7 +20,7 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
   final DBHelper _dbHelper = DBHelper();
   List<Map<String, dynamic>> items = [];
   bool _isLoading = true;
-  int _selectedIndex = 0; // 0 untuk daftar barang, 1 untuk daftar member
+  int _selectedIndex = 0; // 0 untuk daftar barang, 1 untuk daftar member, 2 untuk monitoring
   // State to hold quantity for each item, initialized to 0
   late List<int> quantities;
   int? roomId;
@@ -82,12 +83,22 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
     setState(() {
       _isLoading = true;
     });
-    final data = await _dbHelper.getBarangByRoom(roomId!);
-    setState(() {
-      items = data;
-      quantities = List<int>.filled(items.length, 0);
-      _isLoading = false;
-    });
+    try {
+      final data = await _dbHelper.getBarangByRoom(roomId!);
+      setState(() {
+        items = data;
+        // Pastikan quantities selalu memiliki panjang yang sama dengan items
+        quantities = List<int>.filled(items.length >= 0 ? items.length : 0, 0);
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading barang: $e');
+      setState(() {
+        items = [];
+        quantities = [];
+        _isLoading = false;
+      });
+    }
   }
 
   void _initializeQuantities() {
@@ -171,21 +182,21 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
               icon: Icon(Icons.remove_circle_outline, color: Colors.red),
               onPressed: () {
                 setState(() {
-                  if (quantities[index] > 0) {
+                  if (index < quantities.length && quantities[index] > 0) {
                     quantities[index]--;
                   }
                 });
               },
             ),
             Text(
-              quantities[index].toString(),
+              index < quantities.length ? quantities[index].toString() : '0',
               style: TextStyle(fontSize: 16),
             ),
             IconButton(
               icon: Icon(Icons.add_circle_outline, color: Colors.green),
               onPressed: () {
                 setState(() {
-                  if (quantities[index] < stock) {
+                  if (index < quantities.length && quantities[index] < stock) {
                     quantities[index]++;
                   }
                 });
@@ -220,6 +231,65 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
     }
   }
 
+  Future<void> _onCheckout() async {
+    final selected = <Map<String, dynamic>>[];
+    for (int i = 0; i < items.length && i < quantities.length; i++) {
+      if (quantities[i] > 0) {
+        selected.add({
+          ...items[i],
+          'jumlah': quantities[i],
+        });
+      }
+    }
+
+    if (selected.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Pilih barang yang akan dipinjam.')),
+      );
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Konfirmasi Peminjaman'),
+        content:
+            Text('Anda akan meminjam ${selected.length} jenis barang. Lanjutkan?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false), child: Text('Batal')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text('Ya, Pinjam')),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final session = Session();
+      final username = session.currentUsername ?? 'unknown';
+      final now = DateTime.now().toIso8601String();
+
+      for (final item in selected) {
+        final newStock = (item['stock'] as int) - (item['jumlah'] as int);
+        await _dbHelper.updateBarangStock(item['id'], newStock);
+        await _dbHelper.insertPeminjaman(
+          barangId: item['id'],
+          username: username,
+          jumlah: item['jumlah'],
+          tanggalPinjam: now,
+        );
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Barang berhasil dipinjam.')),
+      );
+
+      // Muat ulang data untuk refresh stok dan reset kuantitas
+      _loadBarang();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -227,7 +297,11 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
       appBar: AppBar(
         backgroundColor: Color(0xFFEF9823),
         title: Text(
-          _selectedIndex == 0 ? widget.roomTitle : 'Daftar Member',
+          _selectedIndex == 0 
+              ? widget.roomTitle 
+              : _selectedIndex == 1 
+                  ? 'Daftar Member' 
+                  : 'Monitoring Peminjaman',
           style: TextStyle(color: Colors.white),
         ),
         leading: IconButton(
@@ -245,6 +319,10 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
           _buildItemListView(),
           // Halaman 1: Daftar Member
           Memberlistadmin(roomTitle: widget.roomTitle),
+          // Halaman 2: Monitoring
+          roomId != null 
+              ? MonitoringComponent(roomId: roomId!, roomTitle: widget.roomTitle)
+              : Center(child: CircularProgressIndicator()),
         ],
       ),
       floatingActionButton: _selectedIndex == 0 && isAdmin
@@ -256,6 +334,23 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
               child: Icon(Icons.add, color: Colors.white),
             )
           : null, // Sembunyikan FAB jika bukan di halaman barang atau bukan admin
+      persistentFooterButtons: _selectedIndex == 0 &&
+              quantities.isNotEmpty && 
+              quantities.any((quantity) => quantity > 0)
+          ? [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _onCheckout,
+                  child: Text('Pinjam Barang'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFEF9823),
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              )
+            ]
+          : null,
       bottomNavigationBar: BottomAppBar(
         color: Color(0xFFEF9823),
         child: Row(
@@ -273,6 +368,13 @@ class _BorrowcomponentState extends State<Borrowcomponent> {
                   color: _selectedIndex == 1 ? Colors.black : Colors.white),
               onPressed: () {
                 _onItemTapped(1);
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.monitor,
+                  color: _selectedIndex == 2 ? Colors.black : Colors.white),
+              onPressed: () {
+                _onItemTapped(2);
               },
             ),
           ],

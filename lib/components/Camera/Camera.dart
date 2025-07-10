@@ -21,20 +21,35 @@ class CameraState extends State<Camera> {
   }
 
   Future<void> initializeCamera() async {
-    cameras = await availableCameras();
-    cameraController = CameraController(
-      cameras[direction],
-      ResolutionPreset.high,
-      enableAudio: false,
-    );
-
     try {
+      cameras = await availableCameras();
+      
+      // Pastikan ada kamera yang tersedia
+      if (cameras.isEmpty) {
+        print("Tidak ada kamera yang tersedia");
+        return;
+      }
+      
+      // Pastikan direction tidak melebihi jumlah kamera yang tersedia
+      if (direction >= cameras.length) {
+        direction = 0;
+      }
+      
+      cameraController = CameraController(
+        cameras[direction],
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
+
       await cameraController!.initialize();
       setState(() {
         isCameraReady = true;
       });
     } catch (e) {
       print("Gagal menghubungkan kamera: $e");
+      setState(() {
+        isCameraReady = false;
+      });
     }
   }
 
@@ -56,8 +71,11 @@ class CameraState extends State<Camera> {
           GestureDetector(
             onTap: () {
               setState(() {
-                direction = direction == 0 ? 1 : 0;
-                initializeCamera();
+                // Pastikan ada lebih dari 1 kamera sebelum flip
+                if (cameras.length > 1) {
+                  direction = direction == 0 ? 1 : 0;
+                  initializeCamera();
+                }
               });
             },
             child: button(

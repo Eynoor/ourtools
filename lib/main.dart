@@ -1,14 +1,22 @@
+import 'package:flutter/material.dart';
 import 'package:coba1/routes.dart';
 import 'package:coba1/screens/opening/opening.dart';
 import 'package:coba1/theme.dart';
-import 'package:flutter/material.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MaterialApp(
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "OURTOOLS",
+      title: 'OURTOOLS',
       theme: theme(),
       initialRoute: Openingscreen.routeName,
-      routes: routes));
+      routes: routes,
+    );
+  }
 }

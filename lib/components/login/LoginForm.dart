@@ -23,6 +23,8 @@ class _Signform extends State<Signform> {
   Future<bool> _validateUser(String username, String password) async {
     final dbHelper = DBHelper();
     final users = await dbHelper.getUserByCredentials(username, password);
+    print(
+        '[DEBUG] _validateUser: username=$username, password=$password, found=${users.isNotEmpty}');
     return users.isNotEmpty;
   }
 
@@ -57,12 +59,15 @@ class _Signform extends State<Signform> {
                         isLoading = true;
                       });
 
+                      print(
+                          '[DEBUG] Sign In pressed: email=[33m$email[0m, password=***');
                       final isValid = await _validateUser(email, password);
 
                       if (isValid) {
                         // Set current user in session
                         final session = Session();
                         session.currentUsername = email;
+                        print('[DEBUG] Session.currentUsername set to: $email');
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Login berhasil!')),
@@ -71,7 +76,8 @@ class _Signform extends State<Signform> {
                         Navigator.pushNamed(context, Homescreens.routeName);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Username atau password salah')),
+                          SnackBar(
+                              content: Text('Username atau password salah')),
                         );
                       }
 

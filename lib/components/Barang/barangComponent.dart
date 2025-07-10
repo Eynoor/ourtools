@@ -32,18 +32,25 @@ class _BarangcomponentState extends State<Barangcomponent> {
 
   // Fungsi untuk mengubah ukuran gambar agar tidak terlalu besar
   Future<Uint8List?> _resizeImage(Uint8List? imageBytes) async {
-    if (imageBytes == null) return null;
+    if (imageBytes == null || imageBytes.isEmpty) return null;
 
-    // Decode gambar dari bytes
-    img.Image? image = img.decodeImage(imageBytes);
-    if (image == null) return null;
+    try {
+      // Decode gambar dari bytes
+      img.Image? image = img.decodeImage(imageBytes);
+      if (image == null || image.width <= 0 || image.height <= 0) {
+        return null;
+      }
 
-    // Ubah ukuran gambar ke lebar maksimum 800px (aspek rasio terjaga)
-    img.Image resizedImage = img.copyResize(image, width: 800);
+      // Ubah ukuran gambar ke lebar maksimum 800px (aspek rasio terjaga)
+      img.Image resizedImage = img.copyResize(image, width: 800);
 
-    // Encode kembali ke format JPG dengan kualitas 85%
-    // Ini akan mengurangi ukuran file secara signifikan
-    return Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
+      // Encode kembali ke format JPG dengan kualitas 85%
+      // Ini akan mengurangi ukuran file secara signifikan
+      return Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
+    } catch (e) {
+      print("Error resizing image: $e");
+      return null;
+    }
   }
 
   // Fungsi untuk mengirim data barang ke API
@@ -118,87 +125,89 @@ class _BarangcomponentState extends State<Barangcomponent> {
           },
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Nama barang',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 8),
-            TextField(
-              controller: _itemNameController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Masukkan nama barang',
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Nama barang',
+                style: TextStyle(fontSize: 16),
               ),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Jumlah Stok',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 8),
-            TextField(
-              controller: _itemStockController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Masukkan jumlah stok awal',
-              ),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Foto barang',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 8),
-            GestureDetector(
-              onTap: () async {
-                // Navigasi ke kamera atau file picker
-                final Uint8List? selectedImageBytes = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => Camera()),
-                );
-                _selectImage(selectedImageBytes);
-              },
-              child: Container(
-                height: 150,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
+              SizedBox(height: 8),
+              TextField(
+                controller: _itemNameController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Masukkan nama barang',
                 ),
-                child: Center(
-                  child: _selectedImageBytes != null
-                      ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover)
-                      : Icon(
-                          Icons.camera_alt,
-                          size: 50,
-                          color: Colors.grey,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Jumlah Stok',
+                style: TextStyle(fontSize: 16),
+              ),
+              SizedBox(height: 8),
+              TextField(
+                controller: _itemStockController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Masukkan jumlah stok awal',
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Foto barang',
+                style: TextStyle(fontSize: 16),
+              ),
+              SizedBox(height: 8),
+              GestureDetector(
+                onTap: () async {
+                  // Navigasi ke kamera atau file picker
+                  final Uint8List? selectedImageBytes = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => Camera()),
+                  );
+                  _selectImage(selectedImageBytes);
+                },
+                child: Container(
+                  height: 150,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: _selectedImageBytes != null
+                        ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover)
+                        : Icon(
+                            Icons.camera_alt,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _addBarang,
+                  style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF012435),
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: _isLoading
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          'Add',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
                 ),
               ),
-            ),
-            Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _addBarang,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF012435),
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        'Add',
-                        style: TextStyle(fontSize: 16, color: Colors.white),
-                      ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
