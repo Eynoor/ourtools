@@ -4,6 +4,7 @@ import 'package:coba1/screens/Borrow/borrowScreens.dart';
 import 'package:coba1/screens/Borrow/borrowUserScreens.dart';
 import 'package:coba1/screens/setting/Settingscreens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:coba1/utils/db_helper.dart';
 import 'package:coba1/utils/session.dart';
 import 'package:coba1/screens/opening/opening.dart';
@@ -269,6 +270,777 @@ class _HomecomponentState extends State<Homecomponent> {
         ],
       ),
     );
+  }
+
+  // Modern Header Widget
+  Widget _buildModernHeader() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Column(
+        children: [
+          // Top Row with Menu and Add Button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.menu_rounded, color: Colors.white, size: 28),
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    _scaffoldKey.currentState?.openDrawer();
+                  },
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFFEF9823),
+                      Color(0xFFD8860B),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFFEF9823).withOpacity(0.4),
+                      blurRadius: 15,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.add_rounded, color: Colors.white, size: 28),
+                  onPressed: () {
+                    HapticFeedback.mediumImpact();
+                    _showModernOptionsModal(context);
+                  },
+                ),
+              ),
+            ],
+          ),
+          
+          SizedBox(height: 25),
+          
+          // Welcome Section
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Halo, ${Session().currentUsername ?? "User"}! 👋',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Kelola ruangan dan inventaris Anda',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withOpacity(0.8),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: 25,
+                  backgroundColor: Colors.white,
+                  child: CircleAvatar(
+                    radius: 22,
+                    backgroundImage: _profileImage != null
+                        ? MemoryImage(_profileImage!)
+                        : null,
+                    backgroundColor: Colors.grey.shade200,
+                    child: _profileImage == null
+                        ? Icon(Icons.person, color: Color(0xFFEF9823), size: 24)
+                        : null,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          SizedBox(height: 20),
+          
+          // Stats Row
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem(
+                  icon: Icons.meeting_room_outlined,
+                  label: 'Total Room',
+                  value: '${rooms.length}',
+                ),
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: Colors.white.withOpacity(0.3),
+                ),
+                _buildStatItem(
+                  icon: Icons.admin_panel_settings_outlined,
+                  label: 'Admin',
+                  value: '${rooms.where((room) => room['creatorUsername'] == Session().currentUsername).length}',
+                ),
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: Colors.white.withOpacity(0.3),
+                ),
+                _buildStatItem(
+                  icon: Icons.group_outlined,
+                  label: 'Member',
+                  value: '${rooms.where((room) => room['creatorUsername'] != Session().currentUsername).length}',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: Color(0xFFEF9823),
+          size: 24,
+        ),
+        SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withOpacity(0.7),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Empty State Widget
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: Color(0xFFEF9823).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.meeting_room_outlined,
+                size: 80,
+                color: Color(0xFFEF9823),
+              ),
+            ),
+            SizedBox(height: 30),
+            Text(
+              'Belum Ada Room',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2D3748),
+              ),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Mulai dengan membuat room pertama Anda\natau bergabung dengan room yang sudah ada',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+            ),
+            SizedBox(height: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildActionButton(
+                  icon: Icons.add_circle_outline,
+                  label: 'Buat Room',
+                  onTap: () => _showCreateRoomDialog(),
+                  isPrimary: true,
+                ),
+                _buildActionButton(
+                  icon: Icons.group_add_outlined,
+                  label: 'Join Room',
+                  onTap: () => _showJoinRoomDialog(),
+                  isPrimary: false,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required bool isPrimary,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: BoxDecoration(
+          gradient: isPrimary
+              ? LinearGradient(
+                  colors: [Color(0xFFEF9823), Color(0xFFD8860B)],
+                )
+              : null,
+          color: isPrimary ? null : Colors.grey[100],
+          borderRadius: BorderRadius.circular(16),
+          border: isPrimary ? null : Border.all(color: Colors.grey[300]!),
+          boxShadow: [
+            BoxShadow(
+              color: isPrimary 
+                  ? Color(0xFFEF9823).withOpacity(0.3)
+                  : Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isPrimary ? Colors.white : Color(0xFF012435),
+              size: 28,
+            ),
+            SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isPrimary ? Colors.white : Color(0xFF012435),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Rooms List Widget
+  Widget _buildRoomsList() {
+    return ListView.builder(
+      physics: BouncingScrollPhysics(),
+      padding: EdgeInsets.all(20),
+      itemCount: rooms.length,
+      itemBuilder: (context, index) {
+        final room = rooms[index];
+        return Container(
+          margin: EdgeInsets.only(bottom: 16),
+          child: _buildModernCard(
+            title: room['title'] ?? '',
+            subtitle: room['subtitle'] ?? '',
+            creatorUsername: room['creatorUsername'],
+            onTap: () {
+              HapticFeedback.lightImpact();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Borrowscreens(
+                    roomTitle: room['title'] ?? '',
+                    roomSubtitle: room['subtitle'] ?? '',
+                  ),
+                ),
+              );
+            },
+            onDelete: () => _deleteRoom(room),
+          ),
+        );
+      },
+    );
+  }
+
+  // Modern Card Widget
+  Widget _buildModernCard({
+    required String title,
+    required String subtitle,
+    String? creatorUsername,
+    VoidCallback? onTap,
+    VoidCallback? onDelete,
+  }) {
+    final session = Session();
+    final currentUser = session.currentUsername ?? 'unknown';
+    final isAdminRoom = creatorUsername == currentUser;
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFEF9823),
+              Color(0xFFD8860B),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFFEF9823).withOpacity(0.3),
+              blurRadius: 15,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isAdminRoom ? Icons.admin_panel_settings : Icons.group,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        isAdminRoom ? 'Admin' : 'Member',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (onDelete != null && isAdminRoom)
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      onDelete();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.delete_outline,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.location_on_outlined,
+                  color: Colors.white.withOpacity(0.8),
+                  size: 16,
+                ),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.8),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Tap untuk masuk',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.7),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white.withOpacity(0.7),
+                  size: 16,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Modern Options Modal
+  void _showModernOptionsModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30),
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
+                  width: 50,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                SizedBox(height: 24),
+                
+                Text(
+                  'Pilih Aksi',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D3748),
+                  ),
+                ),
+                SizedBox(height: 24),
+                
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildModalOption(
+                        icon: Icons.add_circle_outline,
+                        title: 'Buat Room',
+                        subtitle: 'Buat ruangan baru',
+                        onTap: () {
+                          Navigator.pop(context);
+                          _showCreateRoomDialog();
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: _buildModalOption(
+                        icon: Icons.group_add_outlined,
+                        title: 'Join Room',
+                        subtitle: 'Bergabung ke room',
+                        onTap: () {
+                          Navigator.pop(context);
+                          _showJoinRoomDialog();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 24),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildModalOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFEF9823), Color(0xFFD8860B)],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFFEF9823).withOpacity(0.3),
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 32,
+            ),
+            SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper methods
+  void _showCreateRoomDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CreateRoomDialog(
+          onCreate: (String title, String subtitle) async {
+            final session = Session();
+            final currentUser = session.currentUsername ?? 'unknown';
+            await _dbHelper.insertRoom({
+              'title': title,
+              'subtitle': subtitle,
+              'creatorUsername': currentUser,
+            });
+            await _loadRooms();
+            Navigator.pop(context);
+          },
+        );
+      },
+    );
+  }
+
+  void _showJoinRoomDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return EnterRoomDialog(
+          onEnter: (String roomCode) async {
+            Navigator.pop(context);
+            final dbHelper = DBHelper();
+            final roomsFromDB = await dbHelper.getRoomByTitle(roomCode);
+            if (roomsFromDB.isNotEmpty) {
+              final roomData = roomsFromDB.first;
+              final session = Session();
+              final currentUser = session.currentUsername ?? 'unknown';
+              final alreadyMember = await dbHelper.isUserMemberOfRoom(
+                  roomData['id'], currentUser);
+              if (!alreadyMember) {
+                await dbHelper.addMemberToRoom(roomData['id'], currentUser);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Borrowscreens(
+                      roomTitle: roomData['title'] ?? '',
+                      roomSubtitle: roomData['subtitle'] ?? '',
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Kamu sudah menjadi member room ini.')),
+                );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Borrowscreens(
+                      roomTitle: roomData['title'] ?? '',
+                      roomSubtitle: roomData['subtitle'] ?? '',
+                    ),
+                  ),
+                );
+              }
+            } else {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('Room tidak ditemukan'),
+                  content: Text('Room dengan nama "${roomCode}" tidak ada.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteRoom(Map<String, String> room) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red.shade400),
+            SizedBox(width: 8),
+            Text('Hapus Room'),
+          ],
+        ),
+        content: Text(
+          'Yakin ingin menghapus room "${room['title']}"?\nSemua barang di dalamnya juga akan terhapus.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Batal', style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirm == true) {
+      final session = Session();
+      final currentUser = session.currentUsername ?? 'unknown';
+      final dbHelper = DBHelper();
+      final roomsFromDB = await dbHelper.getRooms(currentUser);
+      final roomData = roomsFromDB.firstWhere(
+        (r) => r['title'] == room['title'] && r['subtitle'] == room['subtitle'],
+        orElse: () => {},
+      );
+      if (roomData.isNotEmpty) {
+        await dbHelper.deleteRoom(roomData['id']);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Room berhasil dihapus'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+        await _loadRooms();
+      }
+    }
   }
 
   // Helper method untuk dialog hapus akun
@@ -567,119 +1339,68 @@ class _HomecomponentState extends State<Homecomponent> {
           ),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF012435),
+              Color(0xFF012435).withOpacity(0.95),
+              Color(0xFF012435).withOpacity(0.9),
+            ],
+          ),
+        ),
+        child: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                height: 72, // dinaikkan agar icon tidak terpotong
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.white, width: 1),
+              // Modern Header
+              _buildModernHeader(),
+              
+              // Content Area
+              Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(top: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: Offset(0, -5),
+                      ),
+                    ],
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(
-                          left:
-                              12.0), // sedikit lebih kecil agar lebih fleksibel
-                      child: IconButton(
-                        icon: Icon(Icons.menu),
-                        iconSize: 32, // sedikit lebih besar
-                        color: Colors.white,
-                        onPressed: () =>
-                            _scaffoldKey.currentState?.openDrawer(),
-                        splashRadius: 26, // biar lebih mudah di-tap
+                  child: Column(
+                    children: [
+                      // Indicator bar
+                      Container(
+                        margin: EdgeInsets.only(top: 12),
+                        width: 50,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFFEF9823),
+                              Color(0xFFD8860B),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12.0),
-                      child: IconButton(
-                        icon: Icon(Icons.add),
-                        iconSize: 32,
-                        color: Colors.white,
-                        onPressed: () => _showOptionsModal(context),
-                        splashRadius: 26,
+                      
+                      // Content
+                      Expanded(
+                        child: rooms.isEmpty 
+                            ? _buildEmptyState()
+                            : _buildRoomsList(),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: rooms.map((room) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: _buildCard(
-                        title: room['title'] ?? '',
-                        subtitle: room['subtitle'] ?? '',
-                        creatorUsername: room['creatorUsername'],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => Borrowscreens(
-                                roomTitle: room['title'] ?? '',
-                                roomSubtitle: room['subtitle'] ?? '',
-                              ),
-                            ),
-                          );
-                        },
-                        onDelete: () async {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text('Hapus Room'),
-                              content: Text(
-                                  'Yakin ingin menghapus room ini? Semua barang di dalamnya juga akan terhapus.'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: Text('Batal'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: Text('Hapus',
-                                      style: TextStyle(color: Colors.red)),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirm == true) {
-                            // Ambil id room dari DB
-                            final session = Session();
-                            final currentUser =
-                                session.currentUsername ?? 'unknown';
-                            final dbHelper = DBHelper();
-                            final roomsFromDB =
-                                await dbHelper.getRooms(currentUser);
-                            final roomData = roomsFromDB.firstWhere(
-                              (r) =>
-                                  r['title'] == room['title'] &&
-                                  r['subtitle'] == room['subtitle'],
-                              orElse: () => {},
-                            );
-                            if (roomData.isNotEmpty) {
-                              await dbHelper.deleteRoom(roomData['id']);
-                              // ignore: use_build_context_synchronously
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text('Room berhasil dihapus')),
-                              );
-                              // ignore: use_build_context_synchronously
-                              await _loadRooms(); // reload rooms agar UI terupdate
-                            }
-                          }
-                        },
-                      ),
-                    );
-                  }).toList(),
+                    ],
+                  ),
                 ),
               ),
             ],

@@ -254,19 +254,26 @@ class _MemberlistadminState extends State<Memberlistadmin> {
         ),
         subtitle: Container(
           margin: EdgeInsets.only(top: 4),
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: isAdmin 
-                ? Color(0xFFEF9823).withOpacity(0.2)
-                : Colors.blue.withOpacity(0.2),
+                ? Color(0xFFEF9823)
+                : Colors.blue.shade600,
             borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: (isAdmin ? Color(0xFFEF9823) : Colors.blue.shade600).withOpacity(0.3),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
           child: Text(
             isAdmin ? 'Admin' : 'Member',
             style: TextStyle(
-              color: isAdmin ? Color(0xFFEF9823) : Colors.blue.shade300,
+              color: Colors.white,
               fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
